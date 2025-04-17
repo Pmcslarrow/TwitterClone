@@ -31,4 +31,4 @@ jobs:
         python setup.py install
     - name: Test with pytest
       run: |
-        pytest --cov=your_package_name --cov-report=xml --cov-report=term -vv --durations=0
+        pytest --cov=TwitterClone --cov-report=xml --cov-report=term -vv --durations=0
