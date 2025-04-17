@@ -1,3 +1,3 @@
 # TwitterClone
 
-![Python Build](https://github.com/your-username/your-repo/actions/workflows/python-build.yml/badge.svg)
+![Python Build](https://github.com/Pmcslarrow/TwitterClone/actions/workflows/python-build.yml/badge.svg)
