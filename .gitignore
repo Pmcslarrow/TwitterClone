@@ -1,0 +1,6 @@
+.DS_Store
+twitter_clone/package-lock.json
+coverage/
+node_modules/
+dist/
+*.pyc

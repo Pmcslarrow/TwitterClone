@@ -1,0 +1,73 @@
+name: Deploy Lambda Layer
+
+on: 
+    push:
+      paths:
+          - 'requirements.txt'
+      branches:
+          - main
+    workflow_dispatch:  # Allows manual triggering of the workflow
+
+jobs:
+    deploy-layer:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v2
+
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v1
+        
+        - name: Build Lambda Layer in Docker
+          run: |
+            docker build -t lambda-layer-builder -f Dockerfile.layer .
+            docker create --name extract-layer lambda-layer-builder
+            docker cp extract-layer:/layer.zip layer.zip
+            docker rm extract-layer
+        
+        - name: Check layer size
+          run: |
+            ls -lh layer.zip
+            echo "Layer size: $(du -h layer.zip | cut -f1)"
+
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: us-east-2
+        
+        - name: Deploy Lambda Layer
+          run: |
+            LAYER_ARN=$(aws lambda publish-layer-version \
+                --layer-name ImageUploadDependencies \
+                --description "Dependencies for Image Upload Lambda" \
+                --zip-file fileb://layer.zip \
+                --compatible-runtimes python3.11 \
+                --query 'LayerVersionArn' \
+                --output text)
+            echo "LAYER_ARN=$LAYER_ARN" >> $GITHUB_ENV
+            echo "Published new layer version: $LAYER_ARN"
+
+        - name: Wait for function update to complete
+          run: |
+            # Wait for the function to be in the "Active" state before proceeding
+            FUNCTION_STATE="Updating"
+            while [ "$FUNCTION_STATE" == "Updating" ]; do
+              sleep 5
+              FUNCTION_STATE=$(aws lambda get-function \
+                --function-name ImageUploadFunction \
+                --query 'Configuration.State' \
+                --output text)
+              echo "Current function state: $FUNCTION_STATE"
+            done
+            
+            # Add a little extra buffer time
+            sleep 5
+            echo "Function update complete. Proceeding with configuration update."
+
+        - name: Update Lambda function with new layer
+          run: |
+            aws lambda update-function-configuration \
+                --function-name ImageUploadFunction \
+                --layers ${{ env.LAYER_ARN }}
+            echo "Updated Lambda function with new layer"

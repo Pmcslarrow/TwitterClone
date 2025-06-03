@@ -1,0 +1,105 @@
+import React, { useEffect, useState } from 'react';
+import { Box, Button, IconButton, Typography } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import ExploreIcon from '@mui/icons-material/Explore';
+import LeftDrawer from '../components/LeftDrawer';
+import RightDrawer from '../components/RightDrawer';
+import Prompt from '../components/Prompt';
+import InfiniteScrollPosts from '../components/InfiniteScrollPosts';
+import RootPost from '../components/RootPost';
+
+export default function Homepage() {
+    const [leftOpen, setLeftOpen] = useState(false);
+    const [rightOpen, setRightOpen] = useState(false);
+    const [rootPost, setRootPost] = useState(null);
+
+    useEffect(() => {
+        console.log("PAGE LOADED! Pulling all posts")
+        // Make initial API call to get all posts 
+    }, [])
+
+    useEffect(() => {
+        console.log("New comment section selected! Pulling replies related to post")
+        // If this is activated, we can check if rootPost is nullish
+        // If it is not nullish, then we can call the API and pool the data revolving
+        // only around the comments associated with this post instead. 
+    }, [rootPost])
+
+    return (
+        <Box
+            sx={{
+                height: '100vh',
+                width: '100vw',
+                bgcolor: 'white',
+                position: 'relative',
+                color: 'white',
+            }}
+        >
+            {/* Top Left Icon Button */}
+            <IconButton
+                onClick={() => setLeftOpen(true)}
+                sx={{
+                    position: 'absolute',
+                    top: 16,
+                    left: 16,
+                    color: '#4CAF50',
+                    '&:hover': {
+                        color: '#07670B',
+                    },                    
+                    // bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    // '&:hover': {
+                    //     bgcolor: 'rgba(255, 255, 255, 0.2)',
+                    // },
+                }}
+            >
+                <MenuIcon />
+            </IconButton>
+
+            {/* Top Right Icon Button */}
+            <IconButton
+                onClick={() => setRightOpen(true)}
+                sx={{
+                    position: 'absolute',
+                    top: 16,
+                    right: 16,
+                    color: '#4CAF50',
+                    '&:hover': {
+                        color: '#07670B',
+                    },
+                    // bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    // '&:hover': {
+                    //     bgcolor: 'rgba(255, 255, 255, 0.2)',
+                    // },
+                }}
+            >
+                <ExploreIcon />
+            </IconButton>
+
+            {/* Centered Content */}
+            <Box
+                sx={{
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-around',
+                    flexDirection: 'column',
+                    gap: 2,
+                    textAlign: 'center',
+                }}
+            >
+                { rootPost ? <RootPost post={rootPost} setRootPost={setRootPost} /> : null}
+                
+                {/* Prompt user text field */}
+                <Prompt rootPost={rootPost}/>
+                
+                {/* Post Section */}
+                <InfiniteScrollPosts rootPost={rootPost} setRootPost={setRootPost} />
+
+            </Box>
+
+            {/* Drawers */}
+            <LeftDrawer props={{ leftOpen, setLeftOpen, setRootPost }} />
+            <RightDrawer props={{ rightOpen, setRightOpen }} />
+        </Box>
+    );
+}

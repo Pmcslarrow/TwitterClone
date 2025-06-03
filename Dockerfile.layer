@@ -1,0 +1,16 @@
+FROM public.ecr.aws/lambda/python:3.11
+
+# Install zip
+RUN yum install -y zip
+
+# Create directory structure for the layer
+RUN mkdir -p /opt/python
+
+# Copy requirements file
+COPY requirements.txt .
+
+# Install packages into the layer directory
+RUN pip install -r requirements.txt --target /opt/python
+
+# Create the layer zip file
+RUN cd /opt && zip -r /layer.zip .

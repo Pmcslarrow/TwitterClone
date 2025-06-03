@@ -1,0 +1,9 @@
+:root {
+/* DEFINE GLOBAL STYLING LIKE COLORS HERE*/  
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}

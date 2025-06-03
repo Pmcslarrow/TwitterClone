@@ -1,0 +1,71 @@
+name: Deploy Lambda
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'requirements.txt'  # Skip when only requirements change (handled by layer workflow)
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: image-upload-function
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+    
+    - name: Zip function code only
+      run: |
+        cd lambda_functions
+        zip -r ../deployment.zip ImageUploadFunction.py
+        cd ..
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+
+    - name: Update Lambda function code
+      run: | 
+        aws lambda update-function-code \
+          --function-name ImageUploadFunction \
+          --zip-file fileb://deployment.zip
+
+    - name: Wait for function update to complete
+      run: |
+        # Wait for the function to be in the "Active" state before proceeding
+        FUNCTION_STATE="Updating"
+        while [ "$FUNCTION_STATE" == "Updating" ]; do
+          sleep 5
+          FUNCTION_STATE=$(aws lambda get-function \
+            --function-name ImageUploadFunction \
+            --query 'Configuration.State' \
+            --output text)
+          echo "Current function state: $FUNCTION_STATE"
+        done
+        
+        # Add a little extra buffer time
+        sleep 5
+        echo "Function update complete. Proceeding with configuration update."
+
+    - name: Update Lambda function configuration
+      run: |
+        aws lambda update-function-configuration \
+          --function-name ImageUploadFunction \
+          --handler ImageUploadFunction.lambda_handler \
+          --environment "Variables={BUCKET_NAME=${{ vars.BUCKET_NAME }}, \
+            DB_HOST=${{ secrets.DB_HOST }}, \
+            DB_PORT=${{ vars.DB_PORT }}, \
+            DB_NAME=${{ secrets.DB_NAME }}, \
+            DB_USER=${{ secrets.DB_USER }}, \
+            S3_FOLDER_NAME=${{ vars.S3_FOLDER_NAME }}}"
+
+
+        echo "Updated Lambda function code and set handler to ImageUploadFunction.lambda_handler"
