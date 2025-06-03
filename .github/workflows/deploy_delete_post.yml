@@ -42,6 +42,7 @@ jobs:
       run: | 
         aws lambda update-function-code \
           --function-name twitter_delete_post \
+          --role twitter_clone_role \
           --zip-file fileb://deployment.zip
 
     - name: Wait for function update to complete
