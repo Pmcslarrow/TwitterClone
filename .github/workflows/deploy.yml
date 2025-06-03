@@ -22,7 +22,7 @@ jobs:
     - name: Zip function code only
       run: |
         cd lambda_functions
-        zip -r ../deployment.zip get_recent_tweets.py
+        zip -r ../deployment.zip get_recent_tweets.py datatier.py
         cd ..
 
     - name: Configure AWS credentials
@@ -54,17 +54,3 @@ jobs:
         # Add a little extra buffer time
         sleep 5
         echo "Function update complete. Proceeding with configuration update."
-
-    - name: Update Lambda function configuration
-      run: |
-        aws lambda update-function-configuration \
-          --function-name twitter_get_recent_tweets \
-          --handler get_recent_tweets.lambda_handler \
-          --environment "Variables={\
-            DB_HOST=${{ secrets.DB_HOST }},\
-            DB_PORT=${{ vars.DB_PORT }},\
-            DB_NAME=${{ secrets.DB_NAME }},\
-            DB_USER=${{ secrets.DB_USER }},\
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}}"
-
-        echo "Updated Lambda function code and set handler to get_recent_tweets.lambda_handler"
