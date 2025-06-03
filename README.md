@@ -1,15 +1,15 @@
-![Python Build](https://github.com/CS397-SP25-AppliedAI/assignment-4-team/actions/workflows/python-build.yml/badge.svg)
+![Python Build](https://github.com/Pmcslarrow/TwitterClone/actions/workflows/python-build.yml/badge.svg)
 
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/ZvQj6fur)
 
 ### Running the front-end tests locally
 1) Clone the repo
 ```
-git clone https://github.com/CS397-SP25-AppliedAI/assignment-4-team.git
+git clone https://github.com/Pmcslarrow/TwitterClone.git
 ```
 2) Navigate to the repo in the terminal
 ```
-cd assignment-4-team/
+cd TwitterClone/
 ```
 3) Install [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating) (Node Version Manager)
 ```
@@ -48,11 +48,11 @@ npm run dev
 ### Running the back-end tests locally
 1) Clone the repo
 ```
-git clone https://github.com/CS397-SP25-AppliedAI/assignment-4-team.git
+git clone https://github.com/Pmcslarrow/TwitterClone.git
 ```
 2) Navigate to the repo in the terminal
 ```
-cd assignment-4-team/
+cd TwitterClone/
 ```
 3) Build the virtual environment
 ```
