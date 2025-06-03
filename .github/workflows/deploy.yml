@@ -19,11 +19,16 @@ jobs:
       with:
         python-version: '3.10'
     
-    - name: Zip function code only
+    - name: Zip function code with renamed main file
       run: |
         cd lambda_functions
-        zip -r ../deployment.zip get_recent_tweets.py datatier.py
-        cd ..
+        # Create temp directory for renamed files
+        mkdir -p temp_zip
+        cp get_recent_tweets.py temp_zip/lambda_function.py
+        cp datatier.py temp_zip/
+        cd temp_zip
+        zip -r ../../deployment.zip .
+        cd ../..
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
