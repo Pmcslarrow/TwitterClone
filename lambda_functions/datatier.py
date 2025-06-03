@@ -190,4 +190,3 @@ def perform_action(dbConn, sql, parameters=[]):
 
   finally:
     dbCursor.close()
-
