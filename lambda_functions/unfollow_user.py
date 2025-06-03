@@ -1,6 +1,6 @@
 from configparser import ConfigParser
 import os
-from . import datatier 
+import datatier 
 import json
 import boto3
 
