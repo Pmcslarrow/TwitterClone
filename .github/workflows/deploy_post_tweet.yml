@@ -1,0 +1,62 @@
+name: Deploy Lambda twitter_post_tweet
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lambda_functions/post_tweet.py'
+      - 'lambda_functions/datatier.py'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: twitter_clone
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+    
+    - name: Zip function code with renamed main file
+      run: |
+        cd lambda_functions
+        # Create temp directory for renamed files
+        mkdir -p temp_zip
+        cp post_tweet.py temp_zip/lambda_function.py
+        cp datatier.py temp_zip/
+        cd temp_zip
+        zip -r ../../deployment.zip .
+        cd ../..
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+
+    - name: Update Lambda function code
+      run: | 
+        aws lambda update-function-code \
+          --function-name twitter_post_tweet \
+          --zip-file fileb://deployment.zip
+
+    - name: Wait for function update to complete
+      run: |
+        # Wait for the function to be in the "Active" state before proceeding
+        FUNCTION_STATE="Updating"
+        while [ "$FUNCTION_STATE" == "Updating" ]; do
+          sleep 5
+          FUNCTION_STATE=$(aws lambda get-function \
+            --function-name twitter_post_tweet \
+            --query 'Configuration.State' \
+            --output text)
+          echo "Current function state: $FUNCTION_STATE"
+        done
+        
+        # Add a little extra buffer time
+        sleep 5
+        echo "Function update complete. Proceeding with configuration update."

@@ -1,10 +1,11 @@
-name: Deploy Lambda
+name: Deploy Lambda twitter_generate_presigned_url
 
 on:
   push:
     branches: [main]
     paths:
-      - 'lambda_functions/**'  # Only trigger when Lambda function code changes
+      - 'lambda_functions/generate_presigned_url.py'
+      - 'lambda_functions/datatier.py'
   workflow_dispatch:
 
 jobs:
@@ -24,7 +25,7 @@ jobs:
         cd lambda_functions
         # Create temp directory for renamed files
         mkdir -p temp_zip
-        cp get_recent_tweets.py temp_zip/lambda_function.py
+        cp generate_presigned_url.py temp_zip/lambda_function.py
         cp datatier.py temp_zip/
         cd temp_zip
         zip -r ../../deployment.zip .
@@ -40,7 +41,7 @@ jobs:
     - name: Update Lambda function code
       run: | 
         aws lambda update-function-code \
-          --function-name twitter_get_recent_tweets \
+          --function-name twitter_generate_presigned_url \
           --zip-file fileb://deployment.zip
 
     - name: Wait for function update to complete
@@ -50,7 +51,7 @@ jobs:
         while [ "$FUNCTION_STATE" == "Updating" ]; do
           sleep 5
           FUNCTION_STATE=$(aws lambda get-function \
-            --function-name twitter_get_recent_tweets \
+            --function-name twitter_generate_presigned_url \
             --query 'Configuration.State' \
             --output text)
           echo "Current function state: $FUNCTION_STATE"
