@@ -1,9 +1,18 @@
 from configparser import ConfigParser
 import os
-from . import datatier
 import json
 import boto3
 from datetime import datetime
+
+try:
+    from . import datatier
+except:
+    print("Failed to import from . import datatier")
+try:
+    import datatier
+except:
+    print("Failed to import datatier")
+    
 
 def serialize_rows(rows):
     """
