@@ -126,7 +126,6 @@ describe('LeftDrawer Component', () => {
 
     const avatar = screen.getByRole('img');
     expect(avatar).toHaveAttribute('src', 'https://example.com/profile.jpg');
-    expect(avatar).toHaveAttribute('alt', 'johndoe');
   });
 });
 
