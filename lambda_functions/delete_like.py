@@ -54,11 +54,6 @@ def lambda_handler(event, context):
         postid = event_body['postid']
 
         #
-        # COME BACK HERE AND HANDLE SELECT QUERY 
-        # TO CHECK IF THIS EVEN EXISTS
-        #
-
-        #
         # Establishing DB connection
         #
 
@@ -80,6 +75,31 @@ def lambda_handler(event, context):
         # Adding Like to the Likes table
         #
         try:
+            
+            #
+            # Checking to see if this userid and postid even exist in the Likes table
+            #
+            try:
+                sql = "SELECT * FROM Likes WHERE liker = %s AND originalpost = %s"
+                row = datatier.retrieve_all_rows(db_conn, sql, [userid, postid])
+
+                if not row:
+                    return {
+                        "statusCode": 404,
+                        "body": json.dumps({
+                            "message": "Like not found for given userid and postid."
+                        })
+                    }
+
+            except Exception as e:
+                print("Error checking Likes table:", str(e))
+                return {
+                    "statusCode": 500,
+                    "body": json.dumps({
+                        "message": "Failed to check Likes table due to server error."
+                    })
+                }
+
             sql_statement = """
                 DELETE FROM Likes
                 WHERE liker = %s AND originalpost = %s;

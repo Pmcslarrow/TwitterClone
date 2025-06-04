@@ -77,6 +77,27 @@ def lambda_handler(event, context):
         # Adding Like to the Likes table
         #
         try:
+            try:
+                sql_check = "SELECT * FROM Likes WHERE liker = %s AND originalpost = %s"
+                row = datatier.retrieve_one_row(db_conn, sql_check, [userid, postid])
+
+                if row:
+                    return {
+                        "statusCode": 409,
+                        "body": json.dumps({
+                            "message": "User has already liked this post."
+                        })
+                    }
+
+            except Exception as check_err:
+                print("Error checking existing like:", str(check_err))
+                return {
+                    "statusCode": 500,
+                    "body": json.dumps({
+                        "message": "Failed to verify existing like."
+                    })
+                }
+                
             sql_statement = """
                 INSERT INTO Likes (liker, originalpost)
                 VALUES (%s, %s);

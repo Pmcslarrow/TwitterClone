@@ -70,6 +70,28 @@ def lambda_handler(event, context):
         # Making changes in database
         #
         try:
+
+            try:
+                sql_check = "SELECT * FROM PostInfo WHERE postid = %s"
+                row = datatier.retrieve_one_row(db_conn, sql_check, [postid])
+
+                if not row:
+                    return {
+                        "statusCode": 404,
+                        "body": json.dumps({
+                            "message": f"Post with postid {postid} does not exist."
+                        })
+                    }
+
+            except Exception as check_err:
+                print("Error checking post existence:", str(check_err))
+                return {
+                    "statusCode": 500,
+                    "body": json.dumps({
+                        "message": "Failed to verify post before deletion."
+                    })
+                }
+
             sql_statement = """
                 DELETE FROM PostInfo
                 WHERE postid = %s;

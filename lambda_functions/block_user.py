@@ -103,9 +103,6 @@ def lambda_handler(event, context):
                         "message": "User is already blocked."
                     })
                 }
-
-            # Start a transaction
-            db_conn.start_transaction()
             
             # Add block relationship
             block_sql = """
@@ -126,9 +123,6 @@ def lambda_handler(event, context):
                 WHERE follower = %s AND followee = %s;
             """
             datatier.perform_action(db_conn, remove_follows_sql2, [blocker, blockee])
-            
-            # Commit the transaction
-            db_conn.commit()
 
             return {
                 "statusCode": 200,
@@ -138,10 +132,6 @@ def lambda_handler(event, context):
             }
 
         except Exception as e:
-            # Rollback in case of error
-            if db_conn.in_transaction:
-                db_conn.rollback()
-            
             print("Database operation ERR: ", e)
             return {
                 "statusCode": 500,

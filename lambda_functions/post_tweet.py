@@ -5,6 +5,7 @@ from configparser import ConfigParser
 import os
 import datatier
 import json
+import boto3
 
 
 def lambda_handler(event, context):
