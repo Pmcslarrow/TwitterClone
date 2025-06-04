@@ -44,6 +44,12 @@ jobs:
           --function-name twitter_generate_presigned_url \
           --zip-file fileb://deployment.zip
 
+    - name: Updating Configuration 
+      run: |
+        aws lambda update-function-configuration \
+          --function-name twitter_block_user \
+          --role arn:aws:iam::${{ secrets.ACCOUNT_ID }}:role/twitter_clone_role
+
     - name: Wait for function update to complete
       run: |
         # Wait for the function to be in the "Active" state before proceeding

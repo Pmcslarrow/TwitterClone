@@ -48,7 +48,13 @@ jobs:
             echo "LAYER_ARN=$LAYER_ARN" >> $GITHUB_ENV
             echo "Published new layer version: $LAYER_ARN"
 
-        - name: Wait for function update to complete
+        - name: Updating Configuration 
+      run: |
+        aws lambda update-function-configuration \
+          --function-name twitter_block_user \
+          --role arn:aws:iam::${{ secrets.ACCOUNT_ID }}:role/twitter_clone_role
+
+    - name: Wait for function update to complete
           run: |
             # Wait for the function to be in the "Active" state before proceeding
             FUNCTION_STATE="Updating"

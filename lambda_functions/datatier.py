@@ -7,7 +7,6 @@
 #   Prof. Joe Hummel
 #   Northwestern University
 #
-
 import pymysql
 
 
