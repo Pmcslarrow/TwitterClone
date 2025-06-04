@@ -47,7 +47,7 @@ jobs:
     - name: Wait for function update to complete
       run: |
         aws lambda wait function-updated \
-          --function-name {{VARIABLE}}
+          --function-name twitter_get_recent_tweets
 
     - name: Updating Configuration 
       run: |
