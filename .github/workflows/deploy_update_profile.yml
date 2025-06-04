@@ -47,7 +47,7 @@ jobs:
     - name: Updating Configuration 
       run: |
         aws lambda update-function-configuration \
-          --function-name twitter_block_user \
+          --function-name twitter_update_profile \
           --role arn:aws:iam::${{ secrets.ACCOUNT_ID }}:role/twitter_clone_role
 
     - name: Wait for function update to complete
