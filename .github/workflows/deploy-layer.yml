@@ -75,6 +75,5 @@ jobs:
           run: |
             aws lambda update-function-configuration \
                 --function-name ImageUploadFunction \
-                --role twitter_clone_role \
-                --layers ${{ env.LAYER_ARN }}
+                      --layers ${{ env.LAYER_ARN }}
             echo "Updated Lambda function with new layer"

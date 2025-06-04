@@ -42,7 +42,6 @@ jobs:
       run: | 
         aws lambda update-function-code \
           --function-name twitter_block_user \
-          --role twitter_clone_role \
           --zip-file fileb://deployment.zip
 
     - name: Updating Configuration 
