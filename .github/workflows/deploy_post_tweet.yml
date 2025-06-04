@@ -44,6 +44,11 @@ jobs:
           --function-name twitter_post_tweet \
           --zip-file fileb://deployment.zip
 
+    - name: Wait for function update to complete
+      run: |
+        aws lambda wait function-updated \
+          --function-name twitter_post_tweet
+
     - name: Updating Configuration 
       run: |
         aws lambda update-function-configuration \

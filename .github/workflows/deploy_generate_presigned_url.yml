@@ -44,6 +44,11 @@ jobs:
           --function-name twitter_generate_presigned_url \
           --zip-file fileb://deployment.zip
 
+    - name: Wait for function update to complete
+      run: |
+        aws lambda wait function-updated \
+          --function-name twitter_generate_presigned_url
+
     - name: Updating Configuration 
       run: |
         aws lambda update-function-configuration \
