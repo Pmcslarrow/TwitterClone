@@ -44,36 +44,48 @@ const generateMockPosts = (count) => {
 };
 
 const getRecentTweets = () => {
-    const [posts, setPosts] = useState([])
-    const baseurl = import.meta.env.VITE_API_BASE_URL;
-    const endpoint = 'tweets/recent'
-    const url = baseurl + endpoint
+  const baseurl = import.meta.env.VITE_API_BASE_URL;
+  const endpoint = 'tweets/recent';
+  const url = baseurl + endpoint;
 
-    axios.post(url, { userid: 'Alice406@example.com' }, {
+  let allPostIds; // Store post IDs in outer scope
+
+  axios.post(url, { userid: 'Alice406@example.com' }, {
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(response => {
+    allPostIds = response.data.map(post => post.post_id); // All post ids
+
+    // Calling
+    const countsUrl = baseurl + 'tweets/counts';
+    return axios.post(countsUrl, { postids: allPostIds }, {
       headers: { 'Content-Type': 'application/json' }
-    }).then(response => {
-      setPosts(response.data);
-    })
-    .catch(error => {
-      console.error('API Error:', error);
     });
-
-    const postIds = posts.map(post => post.post_id);
-
-    console.log(postIds)
-
-    // call the get_counts/ endpoint... Create it based on the lambda function I made
-
-    //
-    // posts
-    //
-    // {
-    //   post_id: 21416, 
-    //   userid: 'Alice406@example.com', 
-    //   dateposted: '2025-06-01 16:21:51', 
-    //   content: 'This is a random tweet about books!'
-    // }
-
+  })
+  .then(countsResponse => {
+    const { likes, retweets, comment_counts, comment_ids } = countsResponse.data;
+    
+    // Map each post ID to its engagement data
+    const mappedData = allPostIds.map(postId => {
+      const likeData = likes.find(like => like.originalpost === postId);
+      const retweetData = retweets.find(retweet => retweet.originalpost === postId);
+      const commentCountData = comment_counts.find(count => count.reply_to_postid === postId);
+      const commentIdArray = comment_ids[postId] || [];
+      
+      return {
+        postid: postId,
+        like_count: likeData ? likeData.like_count : 0,
+        retweet_count: retweetData ? retweetData.retweet_count : 0,
+        comment_count: commentCountData ? commentCountData.comment_count : 0,
+        comment_ids: commentIdArray
+      };
+    });
+    
+    console.log(mappedData);
+  })
+  .catch(error => {
+    console.error('API Error:', error);
+  });
 }
 
 
@@ -92,6 +104,10 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
   const [allPosts, setAllPosts] = useState(originalPosts);
   const [visiblePosts, setVisiblePosts] = useState(originalPosts.slice(0, CHUNK_SIZE));
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getRecentTweets();
+  }, [])
 
   useEffect(() => {
     if (rootPost) {
