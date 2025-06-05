@@ -308,11 +308,11 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
             </Box>
           </Box>
         
-        {/* {String(post.poster) === String(logged_in_userid) && ( */}
+        {String(post.poster) === String(logged_in_userid) && (
           <IconButton size="small" onClick={() => handleDelete(post.postid)}>
             <DeleteIcon sx={{ fontSize: 20, color: 'gray' }} />
           </IconButton>
-        {/* )} */}
+        )} 
         </Box>
 
         </Box>
