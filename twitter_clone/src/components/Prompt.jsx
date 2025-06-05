@@ -19,9 +19,12 @@ const Prompt = ({rootPost }) => {
           const endpoint = 'tweets/create';
           const url = baseurl + endpoint;
 
+          console.log(prompt)
+
           const response = await axios.post(url, { userid: 'Alice406@example.com', textcontent: prompt }, {
             headers: { 'Content-Type': 'application/json' }
           });
+
 
           console.log(response)
       }
