@@ -61,11 +61,11 @@ def lambda_handler(event, context):
         db_conn = datatier.get_dbConn(rds_endpoint, rds_portnum, rds_username, rds_pwd, rds_dbname)
 
         try:
-            placeholders = ','.join(['?'] * len(postids))
+            placeholders = ','.join(['%s'] * len(postids))
             sql = f'''
             SELECT originalpost, 
-                SUM(likes_count) AS likes, 
-                SUM(retweets_count) AS retweets
+                CAST(SUM(likes_count) AS SIGNED) AS likes, 
+                CAST(SUM(retweets_count) AS SIGNED) AS retweets
             FROM (
                 SELECT originalpost, COUNT(*) AS likes_count, 0 AS retweets_count
                 FROM Likes
@@ -82,6 +82,7 @@ def lambda_handler(event, context):
             GROUP BY originalpost
             ORDER BY originalpost;
             '''
+            
             params = postids + postids  # flatten it for both IN clauses
             rows = datatier.retrieve_all_rows(db_conn, sql, params)
 
