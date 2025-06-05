@@ -23,7 +23,11 @@ def serialize_rows(rows):
             "post_id": row[0],
             "userid": row[1],
             "dateposted": row[2].strftime('%Y-%m-%d %H:%M:%S') if isinstance(row[2], datetime) else row[2],
-            "content": row[3]
+            "content": row[3],
+            "image_file_key": row[4],
+            "reply_to_postid": row[5],
+            "is_liked": bool(row[6]),
+            "is_retweeted": bool(row[7])
         })
     return serialized
 
@@ -42,7 +46,7 @@ def lambda_handler(event, context):
         - The userid PK to identify the user who is scrolling through the tweets (we need to find the tweets that either belong to the user or were posted by users they follow
     
     On Success:
-        - Returns a list of all "recent tweets"
+        - Returns a list of all "recent tweets" with like and retweet status
 
     """
     try:
@@ -93,15 +97,25 @@ def lambda_handler(event, context):
             print("userid: ", userid)
 
             sql_statement = """
-                SELECT DISTINCT p.*
+                SELECT DISTINCT 
+                    p.postid,
+                    p.userid,
+                    p.dateposted,
+                    p.textcontent,
+                    p.image_file_key,
+                    p.reply_to_postid,
+                    CASE WHEN l.liker IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
+                    CASE WHEN r.retweetuserid IS NOT NULL THEN 1 ELSE 0 END AS is_retweeted
                 FROM PostInfo p
                 LEFT JOIN Followers f ON p.userid = f.followee
+                LEFT JOIN Likes l ON p.postid = l.originalpost AND l.liker = %s
+                LEFT JOIN Retweets r ON p.postid = r.originalpost AND r.retweetuserid = %s
                 WHERE f.follower = %s OR p.userid = %s
                 ORDER BY p.dateposted DESC
                 LIMIT 500;
             """
 
-            rows = datatier.retrieve_all_rows(db_conn, sql_statement, [userid, userid])
+            rows = datatier.retrieve_all_rows(db_conn, sql_statement, [userid, userid, userid, userid])
            
             print("Rows retrieved: ", rows)
 
