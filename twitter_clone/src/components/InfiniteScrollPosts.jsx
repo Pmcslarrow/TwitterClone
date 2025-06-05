@@ -11,6 +11,7 @@ import RepeatIcon from '@mui/icons-material/Repeat';
 import RepeatOutlinedIcon from '@mui/icons-material/RepeatOutlined';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 // Utility to generate mock posts
 const generateMockPosts = (count) => {
@@ -56,6 +57,28 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
   const [visiblePosts, setVisiblePosts] = useState(originalPosts.slice(0, CHUNK_SIZE));
   const navigate = useNavigate();
 
+  // Getting all recent posts
+  useState(() => {
+    const baseurl = import.meta.env.VITE_API_BASE_URL;
+    const endpoint = 'tweets/recent'
+    const url = baseurl + endpoint
+
+    axios.request({
+      method: 'get',
+      url: url,
+      body: {
+        userid: "Alice406@example.com"
+      }
+    })
+    .then(response => {
+      console.log(response.data);
+    })
+    .catch(error => {
+      console.error('API Error:', error);
+    });
+
+  }, [])
+
   useEffect(() => {
     if (rootPost) {
       // Only posts associated to rootPost
@@ -76,6 +99,14 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
       setVisiblePosts(originalPosts.slice(0, CHUNK_SIZE));
     }
   }, [rootPost, originalPosts]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, [visiblePosts]);
 
   const loadMorePosts = () => {
     setVisiblePosts((prev) => {
@@ -119,14 +150,6 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
   const handleReplyClick = (post) => {
     setRootPost(post)
   }
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
-    }
-  }, [visiblePosts]);
 
   return (
     <Box
