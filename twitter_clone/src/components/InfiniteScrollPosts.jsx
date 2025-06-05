@@ -13,108 +13,92 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// Utility to generate mock posts
-const generateMockPosts = (count) => {
-  const users = ['alice', 'bob', 'carol', 'dave'];
-  const sampleTexts = [
-    'Just enjoying the sunshine ☀️',
-    'Building something cool in React!',
-    'Anyone else watching the game tonight?',
-    'Here’s a thought about software architecture...',
-  ];
-
-  return Array.from({ length: count }, (_, i) => {
-    const isRetweet = Math.random() < 0.3;
-    const hasImage = Math.random() < 0.4;
-    return {
-      postid: 20000 + i,
-      poster: users[i % users.length],
-      text: sampleTexts[i % sampleTexts.length],
-      image: hasImage ? 'https://via.placeholder.com/400x200?text=Image' : null,
-      likes: Math.floor(Math.random() * 50),
-      retweets: Math.floor(Math.random() * 20),
-      replies: Math.floor(Math.random() * 10),
-      isRetweet,
-      liked: Math.random() < 0.3,
-      retweeted: Math.random() < 0.2,
-    };
-
-    
-  });
-};
-
-const getRecentTweets = () => {
+const getRecentTweets = async () => {
   const baseurl = import.meta.env.VITE_API_BASE_URL;
   const endpoint = 'tweets/recent';
   const url = baseurl + endpoint;
 
-  let allPostIds; // Store post IDs in outer scope
-
-  axios.post(url, { userid: 'Alice406@example.com' }, {
-    headers: { 'Content-Type': 'application/json' }
-  })
-  .then(response => {
-    allPostIds = response.data.map(post => post.post_id); // All post ids
-
-    // Calling
-    const countsUrl = baseurl + 'tweets/counts';
-    return axios.post(countsUrl, { postids: allPostIds }, {
+  try {
+    // Get recent tweets
+    const response = await axios.post(url, { userid: 'Alice406@example.com' }, {
       headers: { 'Content-Type': 'application/json' }
     });
-  })
-  .then(countsResponse => {
+
+    const tweets = response.data;
+    const allPostIds = tweets.map(post => post.post_id);
+
+    // Get engagement counts
+    const countsUrl = baseurl + 'tweets/counts';
+    const countsResponse = await axios.post(countsUrl, { postids: allPostIds }, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
     const { likes, retweets, comment_counts, comment_ids } = countsResponse.data;
     
-    // Map each post ID to its engagement data
-    const mappedData = allPostIds.map(postId => {
-      const likeData = likes.find(like => like.originalpost === postId);
-      const retweetData = retweets.find(retweet => retweet.originalpost === postId);
-      const commentCountData = comment_counts.find(count => count.reply_to_postid === postId);
-      const commentIdArray = comment_ids[postId] || [];
+    // Merge tweet data with engagement data
+    const enrichedTweets = tweets.map(tweet => {
+      const likeData = likes.find(like => like.originalpost === tweet.post_id);
+      const retweetData = retweets.find(retweet => retweet.originalpost === tweet.post_id);
+      const commentCountData = comment_counts.find(count => count.reply_to_postid === tweet.post_id);
+      const commentIdArray = comment_ids[tweet.post_id] || [];
       
       return {
-        postid: postId,
-        like_count: likeData ? likeData.like_count : 0,
-        retweet_count: retweetData ? retweetData.retweet_count : 0,
-        comment_count: commentCountData ? commentCountData.comment_count : 0,
+        postid: tweet.post_id,
+        poster: tweet.username || tweet.userid,
+        text: tweet.content || tweet.text,
+        image: tweet.image_url || null,
+        likes: likeData ? likeData.like_count : 0,
+        retweets: retweetData ? retweetData.retweet_count : 0,
+        replies: commentCountData ? commentCountData.comment_count : 0,
+        isRetweet: tweet.is_retweet || false,
+        liked: false, // Default to not liked
+        retweeted: false, // Default to not retweeted
         comment_ids: commentIdArray
       };
     });
-    
-    console.log(mappedData);
-  })
-  .catch(error => {
+
+    return enrichedTweets;
+  } catch (error) {
     console.error('API Error:', error);
-  });
-}
-
-
+    return [];
+  }
+};
 
 /* 
-
 This component creates the infinite scrolling effect that we know and love. 
 If you pass in a rootPost (a single comment), then it will show only the 
 replies to this comment you are looking at. 
-
 */
 function InfiniteScrollPosts({ rootPost, setRootPost }) {
   const containerRef = useRef(null);
   const CHUNK_SIZE = 10;
-  const [originalPosts] = useState(() => generateMockPosts(50));
-  const [allPosts, setAllPosts] = useState(originalPosts);
-  const [visiblePosts, setVisiblePosts] = useState(originalPosts.slice(0, CHUNK_SIZE));
+  const [originalPosts, setOriginalPosts] = useState([]);
+  const [allPosts, setAllPosts] = useState([]);
+  const [visiblePosts, setVisiblePosts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    getRecentTweets();
-  }, [])
+    const fetchData = async () => {
+      setLoading(true);
+      const tweets = await getRecentTweets();
+      setOriginalPosts(tweets);
+      setAllPosts(tweets);
+      setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     if (rootPost) {
-      // Only posts associated to rootPost
+      // Filter to show only replies to the root post
       console.log("GET ALL COMMENTS FOR THIS rootPost");
       console.log(rootPost);
 
+      // In a real implementation, you'd fetch replies for this specific post
+      // For now, filtering out the root post itself
       const filteredPosts = originalPosts.filter(
         post => post.postid !== rootPost.postid
       );
@@ -178,7 +162,24 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
   };
 
   const handleReplyClick = (post) => {
-    setRootPost(post)
+    setRootPost(post);
+  };
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          width: 600,
+          height: 600,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          mx: 'auto',
+        }}
+      >
+        <Typography>Loading posts...</Typography>
+      </Box>
+    );
   }
 
   return (
@@ -271,7 +272,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <IconButton
                 size="small"
-                onClick = {() => handleReplyClick(post) }
+                onClick={() => handleReplyClick(post)}
               >
                 <ChatBubbleOutlineIcon sx={{ fontSize: 20, color: 'gray' }} />
               </IconButton>
@@ -283,13 +284,13 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
         </Box>
       ))}
 
-      {visiblePosts.length === allPosts.length && (
+      {visiblePosts.length === allPosts.length && visiblePosts.length > 0 && (
         <Typography textAlign="center" sx={{ mt: 2, color: 'gray' }}>
           🎉 You've reached the end!
         </Typography>
       )}
     </Box>
   );
-};
+}
 
 export default InfiniteScrollPosts;
