@@ -62,7 +62,7 @@ jobs:
         while [ "$FUNCTION_STATE" == "Updating" ]; do
           sleep 5
           FUNCTION_STATE=$(aws lambda get-function \
-            --function-name twitter_get_count \
+            --function-name twitter_get_counts \
             --query 'Configuration.State' \
             --output text)
           echo "Current function state: $FUNCTION_STATE"
