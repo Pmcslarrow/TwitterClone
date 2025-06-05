@@ -11,6 +11,7 @@ import RepeatIcon from '@mui/icons-material/Repeat';
 import RepeatOutlinedIcon from '@mui/icons-material/RepeatOutlined';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 // Utility to generate mock posts
 const generateMockPosts = (count) => {
@@ -37,8 +38,44 @@ const generateMockPosts = (count) => {
       liked: Math.random() < 0.3,
       retweeted: Math.random() < 0.2,
     };
+
+    
   });
 };
+
+const getRecentTweets = () => {
+    const [posts, setPosts] = useState([])
+    const baseurl = import.meta.env.VITE_API_BASE_URL;
+    const endpoint = 'tweets/recent'
+    const url = baseurl + endpoint
+
+    axios.post(url, { userid: 'Alice406@example.com' }, {
+      headers: { 'Content-Type': 'application/json' }
+    }).then(response => {
+      setPosts(response.data);
+    })
+    .catch(error => {
+      console.error('API Error:', error);
+    });
+
+    const postIds = posts.map(post => post.post_id);
+
+    console.log(postIds)
+
+    // call the get_counts/ endpoint... Create it based on the lambda function I made
+
+    //
+    // posts
+    //
+    // {
+    //   post_id: 21416, 
+    //   userid: 'Alice406@example.com', 
+    //   dateposted: '2025-06-01 16:21:51', 
+    //   content: 'This is a random tweet about books!'
+    // }
+
+}
+
 
 
 /* 
@@ -76,6 +113,14 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
       setVisiblePosts(originalPosts.slice(0, CHUNK_SIZE));
     }
   }, [rootPost, originalPosts]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, [visiblePosts]);
 
   const loadMorePosts = () => {
     setVisiblePosts((prev) => {
@@ -119,14 +164,6 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
   const handleReplyClick = (post) => {
     setRootPost(post)
   }
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
-    }
-  }, [visiblePosts]);
 
   return (
     <Box
