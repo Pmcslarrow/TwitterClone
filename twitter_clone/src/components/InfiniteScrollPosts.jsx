@@ -38,8 +38,44 @@ const generateMockPosts = (count) => {
       liked: Math.random() < 0.3,
       retweeted: Math.random() < 0.2,
     };
+
+    
   });
 };
+
+const getRecentTweets = () => {
+    const [posts, setPosts] = useState([])
+    const baseurl = import.meta.env.VITE_API_BASE_URL;
+    const endpoint = 'tweets/recent'
+    const url = baseurl + endpoint
+
+    axios.post(url, { userid: 'Alice406@example.com' }, {
+      headers: { 'Content-Type': 'application/json' }
+    }).then(response => {
+      setPosts(response.data);
+    })
+    .catch(error => {
+      console.error('API Error:', error);
+    });
+
+    const postIds = posts.map(post => post.post_id);
+
+    console.log(postIds)
+
+    // call the get_counts/ endpoint... Create it based on the lambda function I made
+
+    //
+    // posts
+    //
+    // {
+    //   post_id: 21416, 
+    //   userid: 'Alice406@example.com', 
+    //   dateposted: '2025-06-01 16:21:51', 
+    //   content: 'This is a random tweet about books!'
+    // }
+
+}
+
 
 
 /* 
@@ -56,22 +92,6 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
   const [allPosts, setAllPosts] = useState(originalPosts);
   const [visiblePosts, setVisiblePosts] = useState(originalPosts.slice(0, CHUNK_SIZE));
   const navigate = useNavigate();
-
-  // Getting all recent posts
-  useEffect(() => {
-    const baseurl = import.meta.env.VITE_API_BASE_URL;
-    const endpoint = 'tweets/recent'
-    const url = baseurl + endpoint
-
-    axios.post(url, { userid: 'Alice406@example.com' }, {
-      headers: { 'Content-Type': 'application/json' }
-    }).then(response => {
-      console.log(response.data);
-    })
-    .catch(error => {
-      console.error('API Error:', error);
-    });
-  }, [])
 
   useEffect(() => {
     if (rootPost) {
