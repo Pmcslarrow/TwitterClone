@@ -77,8 +77,8 @@ def lambda_handler(event, context):
         if "body" not in event:
             return {
                 "statusCode": 400,
-                "headers": CORS_HEADERS,
-                "body": json.dumps({
+                                "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "User error. No data received."
                 })
             }
@@ -89,8 +89,8 @@ def lambda_handler(event, context):
         if "postids" not in event_body:
             return {
                 "statusCode": 400,
-                "headers": CORS_HEADERS,
-                "body": json.dumps({
+                                "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "postids missing."
                 })
             }
@@ -128,16 +128,16 @@ def lambda_handler(event, context):
 
             return {
                 "statusCode": 200,
-                "headers": CORS_HEADERS,
-                "body": json.dumps(response_data)
+                                "headers": CORS_HEADERS,
+                                "body": json.dumps(response_data)
             }
 
         except Exception as e:
             print("Database operation ERR: ", e)
             return {
                 "statusCode": 500,
-                "headers": CORS_HEADERS,
-                "body": json.dumps({
+                                "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": f"Database error: {str(e)}"
                 })
             }
@@ -145,8 +145,8 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 400,
-            "headers": CORS_HEADERS,
-            "body": json.dumps({
+                        "headers": CORS_HEADERS,
+                                "body": json.dumps({
                 "message": f"An error occurred (retweet): {str(e)}"
             })
         }

@@ -34,8 +34,8 @@ def lambda_handler(event, context):
         if "body" not in event:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "User error. No data received."
                 })
             }
@@ -46,8 +46,8 @@ def lambda_handler(event, context):
         if "userid" not in event_body:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "userid missing."
                 })
             }
@@ -55,8 +55,8 @@ def lambda_handler(event, context):
         if "postid" not in event_body:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "postid missing."
                 })
             }
@@ -95,7 +95,8 @@ def lambda_handler(event, context):
                 if row:
                     return {
                         "statusCode": 409,
-                        "body": json.dumps({
+                        "headers": CORS_HEADERS,
+                                "body": json.dumps({
                             "message": "User has already liked this post."
                         })
                     }
@@ -104,7 +105,8 @@ def lambda_handler(event, context):
                 print("Error checking existing like:", str(check_err))
                 return {
                     "statusCode": 500,
-                    "body": json.dumps({
+                    "headers": CORS_HEADERS,
+                                "body": json.dumps({
                         "message": "Failed to verify existing like."
                     })
                 }
@@ -127,8 +129,8 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 400,
-            "headers": CORS_HEADERS,
-            "body": json.dumps({
+                        "headers": CORS_HEADERS,
+                                "body": json.dumps({
                 "message": f"An error occurred (like_post): {str(e)}"
             })
         }

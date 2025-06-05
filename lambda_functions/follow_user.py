@@ -27,8 +27,8 @@ def lambda_handler(event, context):
         if "body" not in event:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "User error. No data received."
                 })
             }
@@ -39,8 +39,8 @@ def lambda_handler(event, context):
         if "follower" not in event_body:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "follower userid missing."
                 })
             }
@@ -48,8 +48,8 @@ def lambda_handler(event, context):
         if "followee" not in event_body:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "followee userid missing."
                 })
             }
@@ -61,8 +61,8 @@ def lambda_handler(event, context):
         if follower == followee:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "Users cannot follow themselves."
                 })
             }
@@ -90,7 +90,8 @@ def lambda_handler(event, context):
             if not follower_result:
                 return {
                     "statusCode": 404,
-                    "body": json.dumps({
+                    "headers": CORS_HEADERS,
+                                "body": json.dumps({
                         "message": "Follower user does not exist."
                     })
                 }
@@ -102,7 +103,8 @@ def lambda_handler(event, context):
             if not followee_result:
                 return {
                     "statusCode": 404,
-                    "body": json.dumps({
+                    "headers": CORS_HEADERS,
+                                "body": json.dumps({
                         "message": "Followee user does not exist."
                     })
                 }
@@ -114,8 +116,8 @@ def lambda_handler(event, context):
             if existing_relationship:
                 return {
                     "statusCode": 400,
-            "headers": CORS_HEADERS,
-                    "body": json.dumps({
+                                "headers": CORS_HEADERS,
+                                "body": json.dumps({
                         "message": "User is already following this account."
                     })
                 }
@@ -127,7 +129,8 @@ def lambda_handler(event, context):
             if is_blocked:
                 return {
                     "statusCode": 403,
-                    "body": json.dumps({
+                    "headers": CORS_HEADERS,
+                                "body": json.dumps({
                         "message": "Cannot follow user: you have been blocked."
                     })
                 }
@@ -142,7 +145,8 @@ def lambda_handler(event, context):
 
             return {
                 "statusCode": 200,
-                "body": json.dumps({
+                "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "Successfully followed user."
                 })
             }
@@ -151,7 +155,8 @@ def lambda_handler(event, context):
             print("Database operation ERR: ", e)
             return {
                 "statusCode": 500,
-                "body": json.dumps({
+                "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": f"Database error: {str(e)}"
                 })
             }
@@ -159,8 +164,8 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 400,
-            "headers": CORS_HEADERS,
-            "body": json.dumps({
+                        "headers": CORS_HEADERS,
+                                "body": json.dumps({
                 "message": f"An error occurred (follow_user): {str(e)}"
             })
         }
