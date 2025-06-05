@@ -3,6 +3,7 @@ import datatier
 import json
 import boto3
 
+
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
