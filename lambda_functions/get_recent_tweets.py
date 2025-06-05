@@ -2,6 +2,14 @@ from configparser import ConfigParser
 import os
 import json
 import boto3
+
+
+CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST'
+}
+
 from datetime import datetime
 import datatier
 
@@ -41,6 +49,7 @@ def lambda_handler(event, context):
         if "body" not in event:
             return {
                 "statusCode": 400,
+            "headers": CORS_HEADERS,
                 "headers": CORS_HEADERS,
                 "body": json.dumps({
                     "message": "User error. No data received."
@@ -53,6 +62,7 @@ def lambda_handler(event, context):
         if "userid" not in event_body:
             return {
                 "statusCode": 400,
+            "headers": CORS_HEADERS,
                 "headers": CORS_HEADERS,
                 "body": json.dumps({"message": "userid missing."})
             }
@@ -109,6 +119,7 @@ def lambda_handler(event, context):
             print("Updating database ERR: ", e)
             return {
             "statusCode": 400,
+            "headers": CORS_HEADERS,
                 "headers": CORS_HEADERS,
                 "body": json.dumps({
                     "message": f"An error occurred (recent_tweets): {str(e)}"
@@ -118,6 +129,7 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 400,
+            "headers": CORS_HEADERS,
             "headers": CORS_HEADERS,
             "body": json.dumps({
                 "message": f"An error occurred (recent_tweets): {str(e)}"

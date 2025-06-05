@@ -5,6 +5,14 @@ import json
 import boto3
 
 
+CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST'
+}
+
+
+
 def lambda_handler(event, context):
     """
     unfollow_user.py
@@ -20,6 +28,7 @@ def lambda_handler(event, context):
         if "body" not in event:
             return {
                 "statusCode": 400,
+            "headers": CORS_HEADERS,
                 "body": json.dumps({
                     "message": "User error. No data received."
                 })
@@ -31,6 +40,7 @@ def lambda_handler(event, context):
         if "follower" not in event_body:
             return {
                 "statusCode": 400,
+            "headers": CORS_HEADERS,
                 "body": json.dumps({
                     "message": "follower userid missing."
                 })
@@ -39,6 +49,7 @@ def lambda_handler(event, context):
         if "followee" not in event_body:
             return {
                 "statusCode": 400,
+            "headers": CORS_HEADERS,
                 "body": json.dumps({
                     "message": "followee userid missing."
                 })
@@ -102,6 +113,7 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 400,
+            "headers": CORS_HEADERS,
             "body": json.dumps({
                 "message": f"An error occurred (unfollow_user): {str(e)}"
             })

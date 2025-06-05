@@ -1,15 +1,32 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography } from '@mui/material';
+import axios from 'axios';
 
 const Prompt = ({rootPost }) => {
   const [prompt, setPrompt] = useState('');
   const maxChars = 500;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (prompt.trim()) {
       setPrompt('');
-      console.log(prompt);
+
+      if (rootPost) {
+        // REPLY
+      } else {
+        // POST
+          const baseurl = import.meta.env.VITE_API_BASE_URL;
+          const endpoint = 'tweets/create';
+          const url = baseurl + endpoint;
+
+          const response = await axios.post(url, { userid: 'Alice406@example.com', textcontent: prompt }, {
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          console.log(response)
+      }
+
+
     }
   };
 

@@ -1,4 +1,12 @@
 import boto3
+
+
+CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST'
+}
+
 import uuid
 import os
 import json
@@ -67,5 +75,6 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 400,
+            "headers": CORS_HEADERS,
             "body": json.dumps({ "error": str(e) })
         }

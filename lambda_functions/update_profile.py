@@ -4,6 +4,14 @@ import datatier
 import json
 import boto3
 
+
+CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST'
+}
+
+
 def lambda_handler(event, context):
     """
     
@@ -111,6 +119,7 @@ def lambda_handler(event, context):
         print("ERR: ", e)
         return {
             "statusCode": 400,
+            "headers": CORS_HEADERS,
             "body": json.dumps({
                 "message": f"An error occurred (update_profile): {str(e)}"
             })
