@@ -15,47 +15,35 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useUser } from '../context/UserContext';
 
-const getRecentTweets = async () => {
+const getRecentTweets = async ({ postid }) => {
   const baseurl = import.meta.env.VITE_API_BASE_URL;
   const endpoint = 'tweets/recent';
   const url = baseurl + endpoint;
 
   try {
-    // Get recent tweets
-    const response = await axios.post(url, { userid: 'Alice406@example.com' }, {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    console.log("GETTING TWEETS WITH postid:", postid);
+
+    const response = await axios.post(
+      url,
+      { userid: 'Alice406@example.com', postid },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
 
     const tweets = response.data;
-    const allPostIds = tweets.map(post => post.post_id);
 
-    // Get engagement counts
-    const countsUrl = baseurl + 'tweets/counts';
-    const countsResponse = await axios.post(countsUrl, { postids: allPostIds }, {
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    const { likes, retweets, comment_counts, comment_ids } = countsResponse.data;
-    
-    // Merge tweet data with engagement data
     const enrichedTweets = tweets.map(tweet => {
-      const likeData = likes.find(like => like.originalpost === tweet.post_id);
-      const retweetData = retweets.find(retweet => retweet.originalpost === tweet.post_id);
-      const commentCountData = comment_counts.find(count => count.reply_to_postid === tweet.post_id);
-      const commentIdArray = comment_ids[tweet.post_id] || [];
-      
       return {
         postid: tweet.post_id,
         poster: tweet.username || tweet.userid,
         text: tweet.content || tweet.text,
         image: tweet.image_url || null,
-        likes: likeData ? likeData.like_count : 0,
-        retweets: retweetData ? retweetData.retweet_count : 0,
-        replies: commentCountData ? commentCountData.comment_count : 0,
+        likes: tweet.likes || 0,
+        retweets: tweet.retweets || 0,
+        replies: tweet.replies || 0, // Optional: depends if replies count is included now
         isRetweet: tweet.is_retweet || false,
-        liked: false, // Default to not liked
+        liked: false, // Default to not liked (can be updated based on user state)
         retweeted: false, // Default to not retweeted
-        comment_ids: commentIdArray
+        comment_ids: tweet.comment_ids || [] // Optional: depends on API response
       };
     });
 
@@ -65,6 +53,7 @@ const getRecentTweets = async () => {
     return [];
   }
 };
+
 
 /* 
 This component creates the infinite scrolling effect that we know and love. 
@@ -84,7 +73,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const tweets = await getRecentTweets();
+      const tweets = await getRecentTweets({ postid: undefined });
       setOriginalPosts(tweets);
       setAllPosts(tweets);
       setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
@@ -95,26 +84,20 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
   }, []);
 
   useEffect(() => {
-    if (rootPost) {
-      // Filter to show only replies to the root post
-      console.log("GET ALL COMMENTS FOR THIS rootPost");
-      console.log(rootPost);
+    const fetchData = async () => {
+      if (rootPost) {
+        const tweets = await getRecentTweets({ postid: rootPost.postid });
 
-      // In a real implementation, you'd fetch replies for this specific post
-      // For now, filtering out the root post itself
-      const filteredPosts = originalPosts.filter(
-        post => post.postid !== rootPost.postid
-      );
-
-      const trimmedPosts = filteredPosts.slice(0, 3);
-
-      setAllPosts(trimmedPosts);
-      setVisiblePosts(trimmedPosts);
-    } else {
-      // Set to original posts
-      setAllPosts(originalPosts);
-      setVisiblePosts(originalPosts.slice(0, CHUNK_SIZE));
+        setAllPosts(tweets);
+        setVisiblePosts(tweets);
+      } else {
+        // Set to original posts
+        setAllPosts(originalPosts);
+        setVisiblePosts(originalPosts.slice(0, CHUNK_SIZE));
+      }
     }
+    
+    fetchData()
   }, [rootPost, originalPosts]);
 
   useEffect(() => {
