@@ -58,25 +58,19 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
   const navigate = useNavigate();
 
   // Getting all recent posts
-  useState(() => {
+  useEffect(() => {
     const baseurl = import.meta.env.VITE_API_BASE_URL;
     const endpoint = 'tweets/recent'
     const url = baseurl + endpoint
 
-    axios.request({
-      method: 'get',
-      url: url,
-      body: {
-        userid: "Alice406@example.com"
-      }
-    })
-    .then(response => {
+    axios.post(url, { userid: 'Alice406@example.com' }, {
+      headers: { 'Content-Type': 'application/json' }
+    }).then(response => {
       console.log(response.data);
     })
     .catch(error => {
       console.error('API Error:', error);
     });
-
   }, [])
 
   useEffect(() => {
