@@ -21,8 +21,6 @@ const getRecentTweets = async ({ postid }) => {
   const url = baseurl + endpoint;
 
   try {
-    console.log("GETTING TWEETS WITH postid:", postid);
-
     const response = await axios.post(
       url,
       { userid: 'Alice406@example.com', postid },
@@ -37,15 +35,17 @@ const getRecentTweets = async ({ postid }) => {
         poster: tweet.username || tweet.userid,
         text: tweet.content || tweet.text,
         image: tweet.image_url || null,
-        likes: tweet.likes || 0,
-        retweets: tweet.retweets || 0,
-        replies: tweet.replies || 0, // Optional: depends if replies count is included now
+        likes: 0,        // Set likes count to 0 for now
+        retweets: 0,     // Set retweets count to 0 for now
+        replies: tweet.replies || 0,
         isRetweet: tweet.is_retweet || false,
-        liked: false, // Default to not liked (can be updated based on user state)
-        retweeted: false, // Default to not retweeted
-        comment_ids: tweet.comment_ids || [] // Optional: depends on API response
+        liked: Boolean(Number(tweet.likes)),
+        retweeted: Boolean(Number(tweet.retweets)),
+        comment_ids: tweet.comment_ids || []
       };
     });
+
+    console.log(enrichedTweets)
 
     return enrichedTweets;
   } catch (error) {
@@ -53,6 +53,7 @@ const getRecentTweets = async ({ postid }) => {
     return [];
   }
 };
+
 
 
 /* 
@@ -128,23 +129,13 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
   };
 
   const toggleLike = (index) => {
-    setVisiblePosts((prev) => {
-      const updated = [...prev];
-      const post = updated[index];
-      post.liked = !post.liked;
-      post.likes += post.liked ? 1 : -1;
-      return updated;
-    });
+    console.log("USER CLICKED THE LIKE BUTTON")
+    console.log("CHECK IF LIKE OR UNLIKE")
   };
 
   const toggleRetweet = (index) => {
-    setVisiblePosts((prev) => {
-      const updated = [...prev];
-      const post = updated[index];
-      post.retweeted = !post.retweeted;
-      post.retweets += post.retweeted ? 1 : -1;
-      return updated;
-    });
+    console.log("USER CLICKED THE RETWEET BUTTON")
+    console.log("CHECK IF RETWEET OR UNRETWEET")
   };
 
   const handleReplyClick = (post) => {
@@ -188,7 +179,6 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
       console.error('Failed to delete post:', error);
     }
   };
-
 
   return (
     <Box
