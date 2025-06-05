@@ -34,8 +34,8 @@ def lambda_handler(event, context):
         if "body" not in event:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "User error. No data received."
                 })
             }
@@ -46,8 +46,8 @@ def lambda_handler(event, context):
         if "userid" not in event_body:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "userid missing."
                 })
             }
@@ -55,8 +55,8 @@ def lambda_handler(event, context):
         if "textcontent" not in event_body:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "textcontent missing."
                 })
             }
@@ -68,8 +68,8 @@ def lambda_handler(event, context):
         if len(textcontent) > 500:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "Text content exceeds 500 characters."
                 })
             }
@@ -121,7 +121,9 @@ def lambda_handler(event, context):
 
             return {
                 "statusCode": 200,
-                "body": json.dumps({
+                "headers": CORS_HEADERS,
+                                "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "Post posted successfully."
                 })
             }
@@ -132,8 +134,8 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 400,
-            "headers": CORS_HEADERS,
-            "body": json.dumps({
+                        "headers": CORS_HEADERS,
+                                "body": json.dumps({
                 "message": f"An error occurred (post_tweet): {str(e)}"
             })
         }

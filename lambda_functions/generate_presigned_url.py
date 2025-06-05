@@ -24,7 +24,8 @@ def lambda_handler(event, context):
     
     Input example:
         event = {
-            "body": json.dumps({
+            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                 "userid": "12345",
                 "postid": "67890",
                 "fileType": "image/png"
@@ -35,7 +36,8 @@ def lambda_handler(event, context):
         {
             "statusCode": 200,
             "headers": { "Content-Type": "application/json" },
-            "body": json.dumps({
+            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                 "uploadUrl": "<presigned_url>",
                 "fileKey": "<file_key>"
             })
@@ -66,7 +68,8 @@ def lambda_handler(event, context):
         return {
             "statusCode": 200,
             "headers": { "Content-Type": "application/json" },
-            "body": json.dumps({
+            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                 "uploadUrl": presigned_url,
                 "fileKey": file_key
             })
@@ -75,6 +78,6 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 400,
-            "headers": CORS_HEADERS,
-            "body": json.dumps({ "error": str(e) })
+                        "headers": CORS_HEADERS,
+                                "body": json.dumps({ "error": str(e) })
         }

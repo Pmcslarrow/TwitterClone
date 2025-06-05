@@ -107,7 +107,8 @@ def lambda_handler(event, context):
 
             return {
                 "statusCode": 200,
-                "body": json.dumps({
+                "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "Profile updated successfully."
                 })
             }
@@ -119,8 +120,8 @@ def lambda_handler(event, context):
         print("ERR: ", e)
         return {
             "statusCode": 400,
-            "headers": CORS_HEADERS,
-            "body": json.dumps({
+                        "headers": CORS_HEADERS,
+                                "body": json.dumps({
                 "message": f"An error occurred (update_profile): {str(e)}"
             })
         }

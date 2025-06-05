@@ -28,8 +28,8 @@ def lambda_handler(event, context):
         if "body" not in event:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "User error. No data received."
                 })
             }
@@ -40,8 +40,8 @@ def lambda_handler(event, context):
         if "blocker" not in event_body:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "blocker userid missing."
                 })
             }
@@ -49,8 +49,8 @@ def lambda_handler(event, context):
         if "blockee" not in event_body:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "blockee userid missing."
                 })
             }
@@ -62,8 +62,8 @@ def lambda_handler(event, context):
         if blocker == blockee:
             return {
                 "statusCode": 400,
-            "headers": CORS_HEADERS,
-                "body": json.dumps({
+                            "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "Users cannot block themselves."
                 })
             }
@@ -88,7 +88,8 @@ def lambda_handler(event, context):
             if not blocker_result:
                 return {
                     "statusCode": 404,
-                    "body": json.dumps({
+                    "headers": CORS_HEADERS,
+                                "body": json.dumps({
                         "message": "Blocker user does not exist."
                     })
                 }
@@ -99,7 +100,8 @@ def lambda_handler(event, context):
             if not blockee_result:
                 return {
                     "statusCode": 404,
-                    "body": json.dumps({
+                    "headers": CORS_HEADERS,
+                                "body": json.dumps({
                         "message": "Blockee user does not exist."
                     })
                 }
@@ -111,8 +113,8 @@ def lambda_handler(event, context):
             if existing_block:
                 return {
                     "statusCode": 400,
-            "headers": CORS_HEADERS,
-                    "body": json.dumps({
+                                "headers": CORS_HEADERS,
+                                "body": json.dumps({
                         "message": "User is already blocked."
                     })
                 }
@@ -139,7 +141,8 @@ def lambda_handler(event, context):
 
             return {
                 "statusCode": 200,
-                "body": json.dumps({
+                "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": "Successfully blocked user."
                 })
             }
@@ -148,7 +151,8 @@ def lambda_handler(event, context):
             print("Database operation ERR: ", e)
             return {
                 "statusCode": 500,
-                "body": json.dumps({
+                "headers": CORS_HEADERS,
+                                "body": json.dumps({
                     "message": f"Database error: {str(e)}"
                 })
             }
@@ -156,8 +160,8 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 400,
-            "headers": CORS_HEADERS,
-            "body": json.dumps({
+                        "headers": CORS_HEADERS,
+                                "body": json.dumps({
                 "message": f"An error occurred (block_user): {str(e)}"
             })
         }
