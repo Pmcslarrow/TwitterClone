@@ -10,6 +10,57 @@ CORS_HEADERS = {
     'Access-Control-Allow-Methods': 'OPTIONS,POST'
 }
 
+def get_all_counts_union(db_conn, postids):
+    placeholders = ','.join(['%s'] * len(postids))
+    
+    sql = f'''
+        SELECT originalpost as postid, 'likes' as type, COUNT(*) as count, NULL as comment_id
+        FROM Likes 
+        WHERE originalpost IN ({placeholders})
+        GROUP BY originalpost
+        
+        UNION ALL
+        
+        SELECT originalpost as postid, 'retweets' as type, COUNT(*) as count, NULL as comment_id
+        FROM Retweets 
+        WHERE originalpost IN ({placeholders})
+        GROUP BY originalpost
+        
+        UNION ALL
+        
+        SELECT reply_to_postid as postid, 'comments' as type, COUNT(*) as count, NULL as comment_id
+        FROM PostInfo 
+        WHERE reply_to_postid IN ({placeholders})
+        GROUP BY reply_to_postid
+        
+        UNION ALL
+        
+        SELECT reply_to_postid as postid, 'comment_ids' as type, NULL as count, postid as comment_id
+        FROM PostInfo 
+        WHERE reply_to_postid IN ({placeholders})
+    '''
+    
+    rows = datatier.retrieve_all_rows(db_conn, sql, postids * 4)
+    
+    # Organize results by type
+    likes = [{"originalpost": row[0], "like_count": row[2]} 
+             for row in rows if row[1] == 'likes']
+    retweets = [{"originalpost": row[0], "retweet_count": row[2]} 
+                for row in rows if row[1] == 'retweets']
+    comment_counts = [{"reply_to_postid": row[0], "comment_count": row[2]} 
+                      for row in rows if row[1] == 'comments']
+    
+    # Group comment IDs by parent post
+    comment_ids = {}
+    for row in rows:
+        if row[1] == 'comment_ids':
+            parent_postid = row[0]
+            if parent_postid not in comment_ids:
+                comment_ids[parent_postid] = []
+            comment_ids[parent_postid].append(row[3])
+
+    return likes, retweets, comment_counts, comment_ids
+
 def lambda_handler(event, context):
     """
     get_counts.py
@@ -61,35 +112,24 @@ def lambda_handler(event, context):
         db_conn = datatier.get_dbConn(rds_endpoint, rds_portnum, rds_username, rds_pwd, rds_dbname)
 
         try:
-            placeholders = ','.join(['%s'] * len(postids))
-            sql = f'''
-            SELECT originalpost, 
-                CAST(SUM(likes_count) AS SIGNED) AS likes, 
-                CAST(SUM(retweets_count) AS SIGNED) AS retweets
-            FROM (
-                SELECT originalpost, COUNT(*) AS likes_count, 0 AS retweets_count
-                FROM Likes
-                WHERE originalpost IN ({placeholders})
-                GROUP BY originalpost
+            likes, retweets, comment_counts, comment_ids = get_all_counts_union(db_conn, postids)
 
-                UNION ALL
+            print(f"Likes: {likes}")
+            print(f"Retweets: {retweets}")
+            print(f"Comment counts: {comment_counts}")
+            print(f"Comment IDs: {comment_ids}")
 
-                SELECT originalpost, 0 AS likes_count, COUNT(*) AS retweets_count
-                FROM Retweets
-                WHERE originalpost IN ({placeholders})
-                GROUP BY originalpost
-            ) AS combined
-            GROUP BY originalpost
-            ORDER BY originalpost;
-            '''
-            
-            params = postids + postids  # flatten it for both IN clauses
-            rows = datatier.retrieve_all_rows(db_conn, sql, params)
+            response_data = {
+                "likes": likes,
+                "retweets": retweets,
+                "comment_counts": comment_counts,
+                "comment_ids": comment_ids
+            }
 
             return {
                 "statusCode": 200,
                 "headers": CORS_HEADERS,
-                "body": json.dumps(rows)
+                "body": json.dumps(response_data)
             }
 
         except Exception as e:
@@ -110,4 +150,3 @@ def lambda_handler(event, context):
                 "message": f"An error occurred (retweet): {str(e)}"
             })
         }
-
