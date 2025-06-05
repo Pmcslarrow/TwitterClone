@@ -1,17 +1,19 @@
-import React, { useEffect, useRef, useState } from 'react';
-import {
-  Box,
-  Typography,
-  Avatar,
-  IconButton,
-} from '@mui/material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import RepeatIcon from '@mui/icons-material/Repeat';
+  import React, { useEffect, useRef, useState } from 'react';
+  import {
+    Box,
+    Typography,
+    Avatar,
+    IconButton,
+  } from '@mui/material';
+  import FavoriteIcon from '@mui/icons-material/Favorite';
+  import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+  import RepeatIcon from '@mui/icons-material/Repeat';
 import RepeatOutlinedIcon from '@mui/icons-material/RepeatOutlined';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useUser } from '../context/UserContext';
 
 const getRecentTweets = async () => {
   const baseurl = import.meta.env.VITE_API_BASE_URL;
@@ -70,6 +72,7 @@ If you pass in a rootPost (a single comment), then it will show only the
 replies to this comment you are looking at. 
 */
 function InfiniteScrollPosts({ rootPost, setRootPost }) {
+  const { logged_in_userid, updateUser } = useUser();
   const containerRef = useRef(null);
   const CHUNK_SIZE = 10;
   const [originalPosts, setOriginalPosts] = useState([]);
@@ -182,6 +185,28 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
     );
   }
 
+  const handleDelete = async (postid) => {
+    const baseurl = import.meta.env.VITE_API_BASE_URL;
+    const endpoint = 'tweets/delete';
+    const url = baseurl + endpoint;
+
+    try {
+      await axios.post(url, { postid }, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      // Re-fetch updated tweets and update state
+      const updatedTweets = await getRecentTweets();
+      setOriginalPosts(updatedTweets);
+      setAllPosts(updatedTweets);
+      setVisiblePosts(updatedTweets.slice(0, CHUNK_SIZE));
+
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+    }
+  };
+
+
   return (
     <Box
       ref={containerRef}
@@ -242,6 +267,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
             />
           )}
 
+         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <IconButton size="small" onClick={() => toggleLike(idx)}>
@@ -281,6 +307,14 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
               </Typography>
             </Box>
           </Box>
+        
+        {/* {String(post.poster) === String(logged_in_userid) && ( */}
+          <IconButton size="small" onClick={() => handleDelete(post.postid)}>
+            <DeleteIcon sx={{ fontSize: 20, color: 'gray' }} />
+          </IconButton>
+        {/* )} */}
+        </Box>
+
         </Box>
       ))}
 
