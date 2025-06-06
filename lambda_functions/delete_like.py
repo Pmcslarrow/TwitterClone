@@ -122,6 +122,7 @@ def lambda_handler(event, context):
 
             return {
                 "statusCode": 200,
+                "headers": CORS_HEADERS,
                 "body": "Successfully removed like from the Likes table."
             }
 
