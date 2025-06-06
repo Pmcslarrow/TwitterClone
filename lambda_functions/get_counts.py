@@ -32,15 +32,9 @@ def get_all_counts_union(db_conn, postids):
         FROM PostInfo 
         WHERE reply_to_postid IN ({placeholders})
         GROUP BY reply_to_postid
-        
-        UNION ALL
-        
-        SELECT reply_to_postid as postid, 'comment_ids' as type, NULL as count, postid as comment_id
-        FROM PostInfo 
-        WHERE reply_to_postid IN ({placeholders})
     '''
     
-    rows = datatier.retrieve_all_rows(db_conn, sql, postids * 4)
+    rows = datatier.retrieve_all_rows(db_conn, sql, postids * 3)
     
     # Organize results by type
     likes = [{"originalpost": row[0], "like_count": row[2]} 
@@ -49,17 +43,8 @@ def get_all_counts_union(db_conn, postids):
                 for row in rows if row[1] == 'retweets']
     comment_counts = [{"reply_to_postid": row[0], "comment_count": row[2]} 
                       for row in rows if row[1] == 'comments']
-    
-    # Group comment IDs by parent post
-    comment_ids = {}
-    for row in rows:
-        if row[1] == 'comment_ids':
-            parent_postid = row[0]
-            if parent_postid not in comment_ids:
-                comment_ids[parent_postid] = []
-            comment_ids[parent_postid].append(row[3])
 
-    return likes, retweets, comment_counts, comment_ids
+    return likes, retweets, comment_counts
 
 def lambda_handler(event, context):
     """
@@ -97,6 +82,17 @@ def lambda_handler(event, context):
         
         postids = event_body['postids']
 
+        if not postids:  # Check for empty list
+            return {
+                "statusCode": 200,
+                "headers": CORS_HEADERS,
+                "body": json.dumps({
+                    "likes": [],
+                    "retweets": [],
+                    "comment_counts": []
+                })
+            }
+
         # Establishing DB connection
         print("*** Establishing DB connection ***")
 
@@ -112,18 +108,16 @@ def lambda_handler(event, context):
         db_conn = datatier.get_dbConn(rds_endpoint, rds_portnum, rds_username, rds_pwd, rds_dbname)
 
         try:
-            likes, retweets, comment_counts, comment_ids = get_all_counts_union(db_conn, postids)
+            likes, retweets, comment_counts = get_all_counts_union(db_conn, postids)
 
             print(f"Likes: {likes}")
             print(f"Retweets: {retweets}")
             print(f"Comment counts: {comment_counts}")
-            print(f"Comment IDs: {comment_ids}")
 
             response_data = {
                 "likes": likes,
                 "retweets": retweets,
                 "comment_counts": comment_counts,
-                "comment_ids": comment_ids
             }
 
             return {
