@@ -183,12 +183,31 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
     }
   };
 
-  const toggleLike = (index) => {
-    console.log("USER CLICKED THE LIKE BUTTON")
-    console.log("CHECK IF LIKE OR UNLIKE")
+  const toggleLike = async (post) => {
+    if (Boolean(post.liked)) {
+      const baseurl = import.meta.env.VITE_API_BASE_URL;
+      const endpoint = 'tweets/unlike';
+      const url = baseurl + endpoint;
+
+      const unlikeResponse = await axios.post(url, { userid: 'Alice406@example.com', postid: post.postid }, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      console.log(unlikeResponse)
+    } else {
+      const baseurl = import.meta.env.VITE_API_BASE_URL;
+      const endpoint = 'tweets/like';
+      const url = baseurl + endpoint;
+
+      const likeResponse = await axios.post(url, { userid: 'Alice406@example.com', postid: post.postid }, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      console.log(likeResponse)
+    }
   };
 
-  const toggleRetweet = (index) => {
+  const toggleRetweet = (post) => {
     console.log("USER CLICKED THE RETWEET BUTTON")
     console.log("CHECK IF RETWEET OR UNRETWEET")
   };
@@ -267,6 +286,9 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'black' }}>
               @{post.poster}
             </Typography>
+            <Typography sx={{ fontWeight: 'bold', color: 'black' }}>
+              {post.postid}
+            </Typography>
           </Box>
 
           <Typography variant="body1" sx={{ color: 'black', mb: 1 }}>
@@ -290,7 +312,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton size="small" onClick={() => toggleLike(idx)}>
+              <IconButton size="small" onClick={() => toggleLike(post)}>
                 {post.liked ? (
                   <FavoriteIcon sx={{ fontSize: 20, color: 'red' }} />
                 ) : (
@@ -303,7 +325,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton size="small" onClick={() => toggleRetweet(idx)}>
+              <IconButton size="small" onClick={() => toggleRetweet(post)}>
                 {post.retweeted ? (
                   <RepeatIcon sx={{ fontSize: 20, color: 'green' }} />
                 ) : (
