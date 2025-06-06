@@ -139,55 +139,22 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("RELOAD: ", reload)
-
     const fetchData = async () => {
       setIsFetching(true);
-      const tweets = await getRecentTweets({ postid: rootPost ? rootPost.postid : undefined })
+
+      const tweets = await getRecentTweets({ postid: rootPost ? rootPost.postid : undefined });
+
       setAllPosts(tweets);
       setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
       setIsFetching(false);
+    };
+
+    // Trigger fetch only if `reload` is true OR rootPost has changed
+    if (reload || rootPost !== undefined) {
+      fetchData();
+      setReload(false); // Reset reload state
     }
-
-    setReload(false)
-
-    fetchData();
-  }, [reload])
-
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     setLoading(true);
-  //     const tweets = await getRecentTweets({ postid: undefined });
-  //     setOriginalPosts(tweets);
-  //     setAllPosts(tweets);
-  //     setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
-  //     setLoading(false);
-  //   };
-
-  //   // console.log("RESETTING EVERYTHING")
-
-  //   fetchData();
-  // }, []);
-
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     setIsFetching(true);
-
-  //     if (rootPost) {
-  //       const tweets = await getRecentTweets({ postid: rootPost.postid });
-
-  //       setAllPosts(tweets);
-  //       setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
-  //     } else {
-  //       setAllPosts(originalPosts);
-  //       setVisiblePosts(originalPosts.slice(0, CHUNK_SIZE));
-  //     }
-
-  //     setIsFetching(false);
-  //   };
-
-  //   fetchData();
-  // }, [rootPost, originalPosts]);
+  }, [reload, rootPost]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -237,7 +204,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
   }
 
   const handleDelete = async (postid) => {
-    setReload(true);
+   
     const baseurl = import.meta.env.VITE_API_BASE_URL;
     const endpoint = 'tweets/delete';
     const url = baseurl + endpoint;
@@ -249,10 +216,11 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
 
       // Re-fetch updated tweets and update state
       const updatedTweets = await getRecentTweets({ postid: undefined });
+      setReload(true);
+      setIsFetching(true);
       setOriginalPosts(updatedTweets);
       setAllPosts(updatedTweets);
       setVisiblePosts(updatedTweets.slice(0, CHUNK_SIZE));
-      setReload(false)
 
     } catch (error) {
       console.error('Failed to delete post:', error);
