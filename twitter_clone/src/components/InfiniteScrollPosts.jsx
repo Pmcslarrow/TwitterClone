@@ -237,6 +237,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
   }
 
   const handleDelete = async (postid) => {
+    setReload(true);
     const baseurl = import.meta.env.VITE_API_BASE_URL;
     const endpoint = 'tweets/delete';
     const url = baseurl + endpoint;
@@ -251,6 +252,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
       setOriginalPosts(updatedTweets);
       setAllPosts(updatedTweets);
       setVisiblePosts(updatedTweets.slice(0, CHUNK_SIZE));
+      setReload(false)
 
     } catch (error) {
       console.error('Failed to delete post:', error);
@@ -358,7 +360,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
             </Box>
           </Box>
         
-        {String(post.poster) === String(logged_in_userid) && (
+        {String(post.poster) === String('Alice406@example.com') && (
           <IconButton size="small" onClick={() => handleDelete(post.postid)}>
             <DeleteIcon sx={{ fontSize: 20, color: 'gray' }} />
           </IconButton>
