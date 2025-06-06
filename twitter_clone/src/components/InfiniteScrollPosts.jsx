@@ -12,6 +12,7 @@ import RepeatOutlinedIcon from '@mui/icons-material/RepeatOutlined';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
+import CircularProgress from '@mui/material/CircularProgress';
 import axios from 'axios';
 import { useUser } from '../context/UserContext';
 
@@ -21,31 +22,96 @@ const getRecentTweets = async ({ postid }) => {
   const url = baseurl + endpoint;
 
   try {
+    //
+    // Getting the posts and their info from PostInfo
+    //
     const response = await axios.post(
       url,
       { userid: 'Alice406@example.com', postid },
       { headers: { 'Content-Type': 'application/json' } }
     );
-
     const tweets = response.data;
 
+    /*
+    [{
+        "post_id": row[0],
+        "userid": row[1],
+        "dateposted": row[2].strftime('%Y-%m-%d %H:%M:%S') if isinstance(row[2], datetime) else row[2],
+        "content": row[3],
+        "liked": row[6],
+        "retweeted": row[7]
+    }]
+    */
+
+    //
+    // Getting the counts for each 
+    //
+    const allPostIds = tweets.map(post => post.post_id);
+    const countsUrl = baseurl + 'tweets/counts';
+    const countsResponse = await axios.post(countsUrl, { postids: allPostIds }, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    const { likes, retweets, comment_counts} = countsResponse.data;
+
+    /*
+      "likes": [
+          {
+            "originalpost": "123",
+            "like_count": 3
+          },
+          {
+            "originalpost": "456",
+            "like_count": 1
+          }
+        ],
+        "retweets": [
+          {
+            "originalpost": "123",
+            "retweet_count": 2
+          }
+        ],
+        "comment_counts": [
+          {
+            "reply_to_postid": "123",
+            "comment_count": 1
+          },
+          {
+            "reply_to_postid": "456",
+            "comment_count": 2
+          }
+        ],
+    */
+
     const enrichedTweets = tweets.map(tweet => {
+      const postId = tweet.post_id;
+
+      // Find matching like count or default to 0
+      const likeEntry = likes.find(entry => entry.originalpost === postId);
+      const likeCount = likeEntry ? likeEntry.like_count : 0;
+
+      // Find matching retweet count or default to 0
+      const retweetEntry = retweets.find(entry => entry.originalpost === postId);
+      const retweetCount = retweetEntry ? retweetEntry.retweet_count : 0;
+
+      // Find matching comment count or default to 0
+      const commentEntry = comment_counts.find(entry => entry.reply_to_postid === postId);
+      const commentCount = commentEntry ? commentEntry.comment_count : 0;
+
       return {
-        postid: tweet.post_id,
+        postid: postId,
         poster: tweet.username || tweet.userid,
         text: tweet.content || tweet.text,
         image: tweet.image_url || null,
-        likes: 0,        // Set likes count to 0 for now
-        retweets: 0,     // Set retweets count to 0 for now
-        replies: tweet.replies || 0,
-        isRetweet: tweet.is_retweet || false,
-        liked: Boolean(Number(tweet.likes)),
-        retweeted: Boolean(Number(tweet.retweets)),
-        comment_ids: tweet.comment_ids || []
+        likes: likeCount,
+        retweets: retweetCount,
+        replies: commentCount,
+        liked: Boolean(Number(tweet.liked)),
+        retweeted: Boolean(Number(tweet.retweeted)),
       };
     });
 
-    console.log(enrichedTweets)
+    // console.log(enrichedTweets)
 
     return enrichedTweets;
   } catch (error) {
@@ -69,6 +135,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
   const [allPosts, setAllPosts] = useState([]);
   const [visiblePosts, setVisiblePosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -81,24 +148,29 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
       setLoading(false);
     };
 
+    // console.log("RESETTING EVERYTHING")
+
     fetchData();
   }, []);
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsFetching(true);
+
       if (rootPost) {
         const tweets = await getRecentTweets({ postid: rootPost.postid });
 
         setAllPosts(tweets);
-        setVisiblePosts(tweets);
+        setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
       } else {
-        // Set to original posts
         setAllPosts(originalPosts);
         setVisiblePosts(originalPosts.slice(0, CHUNK_SIZE));
       }
-    }
-    
-    fetchData()
+
+      setIsFetching(false);
+    };
+
+    fetchData();
   }, [rootPost, originalPosts]);
 
   useEffect(() => {
@@ -142,20 +214,9 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
     setRootPost(post);
   };
 
-  if (loading) {
+  if (loading || isFetching) {
     return (
-      <Box
-        sx={{
-          width: 600,
-          height: 600,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          mx: 'auto',
-        }}
-      >
-        <Typography>Loading posts...</Typography>
-      </Box>
+      <CircularProgress sx={{ color: '#4CAF50' }}  />
     );
   }
 
@@ -170,7 +231,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
       });
 
       // Re-fetch updated tweets and update state
-      const updatedTweets = await getRecentTweets();
+      const updatedTweets = await getRecentTweets({ postid: undefined });
       setOriginalPosts(updatedTweets);
       setAllPosts(updatedTweets);
       setVisiblePosts(updatedTweets.slice(0, CHUNK_SIZE));
@@ -207,11 +268,11 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
             boxShadow: 2,
           }}
         >
-          {post.isRetweet && (
+          {/* {post.isRetweet && (
             <Typography variant="caption" sx={{ color: 'gray', mb: 1 }}>
               <RepeatIcon sx={{ fontSize: 16, verticalAlign: 'middle' }} /> Retweeted
             </Typography>
-          )}
+          )} */}
 
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Avatar onClick={() => navigate(`/profile/:${post.poster}`)} sx={{ width: 32, height: 32, mr: 1, '&:hover': {bgcolor: '#4CAF50', cursor: 'pointer'}}}>
