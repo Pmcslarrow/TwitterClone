@@ -12,18 +12,7 @@ export default function Homepage() {
     const [leftOpen, setLeftOpen] = useState(false);
     const [rightOpen, setRightOpen] = useState(false);
     const [rootPost, setRootPost] = useState(null);
-
-    useEffect(() => {
-        console.log("PAGE LOADED! Pulling all posts")
-        // Make initial API call to get all posts 
-    }, [])
-
-    useEffect(() => {
-        console.log("New comment section selected! Pulling replies related to post")
-        // If this is activated, we can check if rootPost is nullish
-        // If it is not nullish, then we can call the API and pool the data revolving
-        // only around the comments associated with this post instead. 
-    }, [rootPost])
+    const [reload, setReload] = useState(false);
 
     return (
         <Box
@@ -90,10 +79,10 @@ export default function Homepage() {
                 { rootPost ? <RootPost post={rootPost} setRootPost={setRootPost} /> : null}
                 
                 {/* Prompt user text field */}
-                <Prompt rootPost={rootPost}/>
+                <Prompt rootPost={rootPost} setRootPost={setRootPost} reload={reload} setReload={setReload}/>
                 
                 {/* Post Section */}
-                <InfiniteScrollPosts rootPost={rootPost} setRootPost={setRootPost} />
+                <InfiniteScrollPosts rootPost={rootPost} setRootPost={setRootPost} reload={reload} setReload={setReload} />
 
             </Box>
 

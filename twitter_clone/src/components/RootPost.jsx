@@ -23,8 +23,9 @@ comments within this individual post as well.
 */
 
 const RootPost = ({ post, setRootPost }) => {
-
-
+  if (post === true ) {
+    return <></>
+  }
 
   return (
     <Box

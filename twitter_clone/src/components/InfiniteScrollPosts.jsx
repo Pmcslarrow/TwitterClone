@@ -4,6 +4,7 @@
     Typography,
     Avatar,
     IconButton,
+    setRef,
   } from '@mui/material';
   import FavoriteIcon from '@mui/icons-material/Favorite';
   import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -127,51 +128,66 @@ This component creates the infinite scrolling effect that we know and love.
 If you pass in a rootPost (a single comment), then it will show only the 
 replies to this comment you are looking at. 
 */
-function InfiniteScrollPosts({ rootPost, setRootPost }) {
+function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
   const { logged_in_userid, updateUser } = useUser();
   const containerRef = useRef(null);
   const CHUNK_SIZE = 10;
   const [originalPosts, setOriginalPosts] = useState([]);
   const [allPosts, setAllPosts] = useState([]);
   const [visiblePosts, setVisiblePosts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const tweets = await getRecentTweets({ postid: undefined });
-      setOriginalPosts(tweets);
-      setAllPosts(tweets);
-      setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
-      setLoading(false);
-    };
+    console.log("RELOAD: ", reload)
 
-    // console.log("RESETTING EVERYTHING")
-
-    fetchData();
-  }, []);
-
-  useEffect(() => {
     const fetchData = async () => {
       setIsFetching(true);
-
-      if (rootPost) {
-        const tweets = await getRecentTweets({ postid: rootPost.postid });
-
-        setAllPosts(tweets);
-        setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
-      } else {
-        setAllPosts(originalPosts);
-        setVisiblePosts(originalPosts.slice(0, CHUNK_SIZE));
-      }
-
+      const tweets = await getRecentTweets({ postid: rootPost ? rootPost.postid : undefined })
+      setAllPosts(tweets);
+      setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
       setIsFetching(false);
-    };
+    }
+
+    setReload(false)
 
     fetchData();
-  }, [rootPost, originalPosts]);
+  }, [reload])
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     setLoading(true);
+  //     const tweets = await getRecentTweets({ postid: undefined });
+  //     setOriginalPosts(tweets);
+  //     setAllPosts(tweets);
+  //     setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
+  //     setLoading(false);
+  //   };
+
+  //   // console.log("RESETTING EVERYTHING")
+
+  //   fetchData();
+  // }, []);
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     setIsFetching(true);
+
+  //     if (rootPost) {
+  //       const tweets = await getRecentTweets({ postid: rootPost.postid });
+
+  //       setAllPosts(tweets);
+  //       setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
+  //     } else {
+  //       setAllPosts(originalPosts);
+  //       setVisiblePosts(originalPosts.slice(0, CHUNK_SIZE));
+  //     }
+
+  //     setIsFetching(false);
+  //   };
+
+  //   fetchData();
+  // }, [rootPost, originalPosts]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -214,7 +230,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost }) {
     setRootPost(post);
   };
 
-  if (loading || isFetching) {
+  if (isFetching) {
     return (
       <CircularProgress sx={{ color: '#4CAF50' }}  />
     );
