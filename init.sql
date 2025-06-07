@@ -18,7 +18,7 @@ CREATE TABLE UserInfo (
     userid VARCHAR(320) PRIMARY KEY, -- userid is now going to be an EMAIL
     username VARCHAR(50) NOT NULL UNIQUE, -- squished thing mike and I discussed
     bio TEXT,
-    picture VARCHAR(255)
+    picture TEXT
 );
 
 CREATE TABLE PostInfo (
