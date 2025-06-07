@@ -88,13 +88,12 @@ def lambda_handler(event, context):
                 
                 if rows_affected > 0:
                     return {
-                        "statusCode": 201,
+                        "statusCode": 200,
                         "headers": CORS_HEADERS,
                         "body": json.dumps({
-                            "username": username,
+                            "username": "",
                             "picture": picture,
                             "bio": placeholder_bio,
-                            "message": "New user created successfully."
                         })
                     }
                 else:
