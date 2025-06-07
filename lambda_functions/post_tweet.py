@@ -25,6 +25,7 @@ def lambda_handler(event, context):
         - The userid PK to identify the user to update
         - The key of textcontent and value associated to the tweet.
         - [OPTIONAL] The file key of the image(s) to be uploaded to S3.
+        - [OPTIONAL] The root_post_id to reply to a specific post.
     
     On Success:
         - Adds new tweet to PostInfo table
@@ -64,6 +65,7 @@ def lambda_handler(event, context):
         userid = event_body['userid']
         textcontent = event_body['textcontent']
         image_file_key = event_body.get('image_file_key', None)
+        root_post_id = event_body.get('root_post_id', None)  # Optional
 
         if len(textcontent) > 500:
             return {
@@ -102,8 +104,8 @@ def lambda_handler(event, context):
         #
         try:
             sql_statement = """
-                INSERT INTO PostInfo (userid, dateposted, textcontent, image_file_key)
-                VALUES (%s, CURRENT_TIMESTAMP, %s, %s);
+                INSERT INTO PostInfo (userid, dateposted, textcontent, image_file_key, reply_to_postid)
+                VALUES (%s, CURRENT_TIMESTAMP, %s, %s, %s);
             """
 
             print("Printing SQL statement: ")
@@ -113,8 +115,9 @@ def lambda_handler(event, context):
             print(f"userid: {userid}")
             print(f"textcontent: {textcontent}")
             print(f"image_file_key: {image_file_key}")
+            print(f"root_post_id: {root_post_id}")
 
-            datatier.perform_action(db_conn, sql_statement, [userid, textcontent, image_file_key])
+            datatier.perform_action(db_conn, sql_statement, [userid, textcontent, image_file_key, root_post_id])
            
 
             print("Update successful.")
