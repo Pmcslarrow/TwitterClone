@@ -51,9 +51,11 @@ export default function RightDrawer({ props }) {
     fetchUsers();
   }, [rightOpen]);
 
-  const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users
+    .filter(user =>
+      user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .slice(0, 50);
 
   return (
     <Drawer
