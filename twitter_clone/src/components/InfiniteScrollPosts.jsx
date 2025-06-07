@@ -40,7 +40,7 @@ const getRecentTweets = async ({ userid, postid }) => {
       headers: { 'Content-Type': 'application/json' }
     });
 
-    const { likes, retweets, comment_counts} = countsResponse.data;
+    const { likes, retweets, comment_counts } = countsResponse.data;
 
     const enrichedTweets = tweets.map(tweet => {
       const postId = tweet.post_id;
@@ -66,7 +66,11 @@ const getRecentTweets = async ({ userid, postid }) => {
         retweeted: Boolean(Number(tweet.retweeted)),
         username: tweet.username
       };
+
+      // [ {} ]
     });
+
+    console.log(enrichedTweets)
 
     return enrichedTweets;
   } catch (error) {
@@ -305,7 +309,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
                 {post.poster[0].toUpperCase()}
               </Avatar>
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'black' }}>
-                @{post.poster}
+                {post.username}
               </Typography>
               <Typography sx={{ fontWeight: 'bold', color: 'black' }}>
                 {post.postid}

@@ -118,9 +118,10 @@ const LoginPage = () => {
                                     const { username, picture, bio } = response.data;
 
                                     if (username === "") {
+                                        // NEW USER
                                         decoded.bio = bio;
-                                    }
-                                    else {
+                                    } else {
+                                        // ALREADY EXISTS
                                         decoded.username = username;
                                         decoded.picture = picture;
                                         decoded.bio = bio;

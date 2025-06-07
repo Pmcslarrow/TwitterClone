@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Drawer, Typography, TextField, List, ListItem, Avatar, ListItemText, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../context/UserContext'; 
 import axios from 'axios';
 
 const getUsers = async (currentUserId) => {
@@ -32,7 +33,7 @@ const getUsers = async (currentUserId) => {
 
 export default function RightDrawer({ props }) {
   const { rightOpen, setRightOpen } = props;
-  // const { user, useUser } = useUser()
+  const { user, setUser } = useUser()
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
