@@ -90,8 +90,8 @@ const LoginPage = () => {
                             let decoded = jwtDecode(credentialResponse.credential);
                             let name = decoded.name.replace(/\s+/g, '').toLowerCase();
                             const uniquePart = Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
-                            const userid = name + uniquePart;
-                            decoded.userid = userid;
+                            const username = name + uniquePart;
+                            decoded.username = username;
                             setUser(decoded);
                             navigate('/home');
                             /*

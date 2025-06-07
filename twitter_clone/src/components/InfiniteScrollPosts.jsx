@@ -52,7 +52,7 @@ const getRecentTweets = async ({ postid }) => {
 
       return {
         postid: postId,
-        poster: tweet.username || tweet.userid,
+        poster: tweet.userid,
         text: tweet.content || tweet.text,
         image: tweet.image_url || null,
         likes: likeCount,
@@ -60,6 +60,7 @@ const getRecentTweets = async ({ postid }) => {
         replies: commentCount,
         liked: Boolean(Number(tweet.liked)),
         retweeted: Boolean(Number(tweet.retweeted)),
+        username: tweet.username
       };
     });
 
@@ -294,7 +295,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Avatar onClick={() => navigate(`/profile/:${post.poster}`)} sx={{ width: 32, height: 32, mr: 1, '&:hover': {bgcolor: '#4CAF50', cursor: 'pointer'}}}>
+              <Avatar onClick={() => navigate(`/profile/:${post.username}`)} sx={{ width: 32, height: 32, mr: 1, '&:hover': {bgcolor: '#4CAF50', cursor: 'pointer'}}}>
                 {post.poster[0].toUpperCase()}
               </Avatar>
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'black' }}>

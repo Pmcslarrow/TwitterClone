@@ -14,7 +14,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/home" element={<Homepage />} />
-        <Route path="/profile/:profileuserid" element={<Profile />} />
+        <Route path="/profile/:profileUsername" element={<Profile />} />
         <Route path="/profile/undefined" element={<ErrorPage />} /> {/* Catch-all route */}
         <Route path="*" element={<ErrorPage />} /> {/* Catch-all route */}
       </Routes>

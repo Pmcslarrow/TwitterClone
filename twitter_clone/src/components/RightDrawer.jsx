@@ -88,7 +88,7 @@ export default function RightDrawer({ props }) {
             {filteredUsers.map((user) => (
               <ListItem 
                 key={user.userid} 
-                onClick={() => navigate(`/profile/${user.userid}`)} 
+                onClick={() => navigate(`/profile/${user.username}`)} 
                 sx={{ alignItems: 'flex-start', '&:hover': {bgcolor: '#4CAF50', cursor: 'pointer'}}}
               >
                 <Avatar src={user.picture} alt={user.username} sx={{ mr: 2 }} />

@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Typography, Avatar, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import EditProfile from '../pages/EditProfile';
+import { useParams } from 'react-router-dom';
 
-export default function ProfileHeader({ profileUserId, bio, picture }) {
+
+export default function ProfileHeader({ bio, picture }) {
     const navigate = useNavigate();
     const [editing, setEditing] = useState(false);
     const { user } = useUser(); // The user who is logged in
-    const canEdit = (profileUserId === user?.userid);
+    const { profileUsername } = useParams(); // Profile who's page we are visiting
+
+    const canEdit = (user?.username === profileUsername )
+
+
+    console.log(user)
 
     if (editing) {
         return <EditProfile setEditing={setEditing}/>
@@ -27,7 +34,7 @@ export default function ProfileHeader({ profileUserId, bio, picture }) {
         >
             <Avatar
                 src={picture}
-                alt={profileUserId}
+                alt={profileUsername}
                 sx={{
                     width: 100,
                     height: 100,
@@ -36,7 +43,7 @@ export default function ProfileHeader({ profileUserId, bio, picture }) {
                 onClick={() => navigate("/home")}
             />
             <Typography variant="h6" sx={{ color: 'black', fontWeight: 'bold' }}>
-                {profileUserId}
+                {profileUsername}
             </Typography>
         
         {/* Edit button logic */}

@@ -7,6 +7,9 @@ export default function LeftDrawer({props}) {
     let {leftOpen, setLeftOpen, setRootPost} = props
     const navigate = useNavigate();
     const { user, setUser } = useUser();
+    
+    console.log("CHECKING IF STILL LOGGED IN TO SAME ACCOUNT: ", user)
+    console.log(user)
   
     return (
       <Drawer
@@ -41,7 +44,7 @@ export default function LeftDrawer({props}) {
                   cursor: 'pointer'
             }, 
             }}
-            onClick={() => navigate(`/profile/${user?.userid}`)}
+            onClick={() => navigate(`/profile/${user?.username}`)}
           />
 
       

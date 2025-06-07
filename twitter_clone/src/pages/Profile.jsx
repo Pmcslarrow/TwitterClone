@@ -9,21 +9,16 @@ import RootPost from '../components/RootPost';
 import InfiniteScrollPosts from '../components/InfiniteScrollPosts';
 import ProfileHeader from '../components/ProfileHeader'
 import { useParams } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
 
-
-/*
-
-Profile is not just the current user's profile page, but ANY
-user's profile page. It will live at the endpoint 
-/profile/:userid
-
-*/
 export default function Profile() {
     const [leftOpen, setLeftOpen] = useState(false);
     const [rightOpen, setRightOpen] = useState(false);
     const [rootPost, setRootPost] = useState(null);
     const [reload, setReload] = useState(false);
-    const { profileuserid } = useParams(); // Profile who's page we are visiting
+    const { profileUsername } = useParams(); // Profile who's page we are visiting
+
+    console.log("profileUsername in Profile.jsx: ", profileUsername)
     
     return (
         <Box
@@ -98,7 +93,7 @@ export default function Profile() {
                 :
                     <>
                         <ProfileHeader 
-                            profileUserId={profileuserid} 
+                            profileUsername={profileUsername} 
                             bio="Web3 enthusiast. Tweets about code, coffee, and cats." 
                             picture="https://example.com/profile.jpg" 
                         />

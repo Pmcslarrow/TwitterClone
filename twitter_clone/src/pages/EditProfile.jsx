@@ -14,7 +14,7 @@ import CloseIcon from '@mui/icons-material/Close';
 
 export default function EditProfile({ setEditing }) {
   const { user, updateUser } = useUser(); // assume updateUser is provided
-  const [userid, setUserid] = useState(user?.userid || '');
+  const [username, setUsername] = useState(user?.username || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [picture, setPicture] = useState(user?.picture || '');
   const [saving, setSaving] = useState(false);
@@ -26,7 +26,7 @@ export default function EditProfile({ setEditing }) {
 
     try {
       // Example: Replace this with your real API call
-      await updateUser({ userid, bio, picture });
+      await updateUser({ username, bio, picture });
     } catch (err) {
       setError('Failed to update profile.');
     } finally {
@@ -61,10 +61,10 @@ export default function EditProfile({ setEditing }) {
 
         <Stack spacing={2}>
           <TextField
-            label="Username (UserID)"
+            label="Username"
             variant="outlined"
             fullWidth
-            value={userid}
+            value={username}
             onChange={(e) => setUserid(e.target.value)}
           />
 
@@ -89,7 +89,7 @@ export default function EditProfile({ setEditing }) {
           <Box sx={{ textAlign: 'center' }}>
             <Avatar
               src={picture}
-              alt={userid}
+              alt={username}
               sx={{ width: 80, height: 80, mx: 'auto', mb: 1 }}
             />
             <Typography variant="caption" color="text.secondary">
@@ -106,7 +106,7 @@ export default function EditProfile({ setEditing }) {
           <Button
             variant="contained"
             onClick={handleSave}
-            disabled={saving || !userid.trim()}
+            disabled={saving || !username.trim()}
             sx={{
               mx: 2,
               color: 'white',
