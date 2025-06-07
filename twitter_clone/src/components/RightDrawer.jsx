@@ -1,34 +1,57 @@
-import React, { useState } from 'react';
-import { Box, Button, Drawer, Typography, TextField, List, ListItem, Avatar, ListItemText } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Button, Drawer, Typography, TextField, List, ListItem, Avatar, ListItemText, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const mockUsers = [
-  {
-    userid: 'john123',
-    username: 'john_doe',
-    bio: 'Loves coding and coffee.',
-    picture: 'https://i.pravatar.cc/150?img=1'
-  },
-  {
-    userid: 'jane456',
-    username: 'jane_smith',
-    bio: 'Frontend developer and cat lover.',
-    picture: 'https://i.pravatar.cc/150?img=2'
-  },
-  {
-    userid: 'sam789',
-    username: 'sam_wilson',
-    bio: 'Enjoys hiking and backend development.',
-    picture: 'https://i.pravatar.cc/150?img=3'
+const getUsers = async (currentUserId) => {
+  const baseurl = import.meta.env.VITE_API_BASE_URL;
+  const endpoint = 'users/';
+  const url = baseurl + endpoint;
+
+  try {
+    const response = await axios.post(
+      url,
+      { userid: currentUserId },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    
+    // Transform the response data to match expected format
+    const users = response.data.map(user => ({
+      userid: user[0], // First element from tuple
+      username: user[1], // Second element from tuple
+      bio: '', // Not provided by API
+      picture: `https://i.pravatar.cc/150?u=${user[0]}` // Generate avatar based on userid
+    }));
+    
+    return users;
+  } catch (error) {
+    console.error('API Error:', error);
+    return [];
   }
-];
+};
 
 export default function RightDrawer({ props }) {
   const { rightOpen, setRightOpen } = props;
   const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const filteredUsers = mockUsers.filter(user =>
+  // Fetch users when drawer opens
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (rightOpen) {
+        setIsLoading(true);
+        const fetchedUsers = await getUsers('Alice406@example.com'); // Replace with actual current user ID
+        setUsers(fetchedUsers);
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [rightOpen]);
+
+  const filteredUsers = users.filter(user =>
     user.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -53,17 +76,29 @@ export default function RightDrawer({ props }) {
           onChange={(e) => setSearchTerm(e.target.value)}
           sx={{ mb: 2 }}
         />
-        <List>
-          {filteredUsers.map((user) => (
-            <ListItem key={user.userid} onClick={() => navigate(`/profile/${user.userid}`)} sx={{ alignItems: 'flex-start', '&:hover': {bgcolor: '#4CAF50', cursor: 'pointer'}}}>
-              <Avatar src={user.picture} alt={user.username} sx={{ mr: 2 }} />
-              <ListItemText
-                primary={user.username}
-                secondary={user.bio}
-              />
-            </ListItem>
-          ))}
-        </List>
+        
+        {isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+            <CircularProgress sx={{ color: '#4CAF50' }} />
+          </Box>
+        ) : (
+          <List>
+            {filteredUsers.map((user) => (
+              <ListItem 
+                key={user.userid} 
+                onClick={() => navigate(`/profile/${user.userid}`)} 
+                sx={{ alignItems: 'flex-start', '&:hover': {bgcolor: '#4CAF50', cursor: 'pointer'}}}
+              >
+                <Avatar src={user.picture} alt={user.username} sx={{ mr: 2 }} />
+                <ListItemText
+                  primary={user.username}
+                  secondary={user.bio || 'No bio available'}
+                />
+              </ListItem>
+            ))}
+          </List>
+        )}
+        
         <Button 
           variant="contained" 
           onClick={() => setRightOpen(false)} 
