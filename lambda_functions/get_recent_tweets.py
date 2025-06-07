@@ -103,7 +103,7 @@ def lambda_handler(event, context):
                     LEFT JOIN Followers f ON p.userid = f.followee
                     LEFT JOIN Likes l ON p.postid = l.originalpost AND l.liker = %s
                     LEFT JOIN Retweets r ON p.postid = r.originalpost AND r.retweetuserid = %s
-                    WHERE f.follower = %s OR p.userid = %s
+                    WHERE (f.follower = %s OR p.userid = %s) AND p.reply_to_postid IS NULL
                     ORDER BY p.dateposted DESC
                     LIMIT 500;
                 """
