@@ -15,13 +15,15 @@ def lambda_handler(event, context):
     """
     Input:
     -----
-    - userid -- The userid (email) of the user to check/create
+    - userid -- The userid (email) of the user
+    - username -- The username for the user
+    - picture -- The picture URL for the user
 
     Logic:
     ------
     - Check if userid exists in database
     - If no: create new user with id, username, picture url, and placeholder bio
-    - If yes: return the username, picture url, and bio
+    - If yes: return existing username, picture url, and bio
     """
     try:
         if "body" not in event:
@@ -35,16 +37,19 @@ def lambda_handler(event, context):
         
         event_body = json.loads(event['body'])
 
-        if "userid" not in event_body:
-            return {
-                "statusCode": 400,
-                "headers": CORS_HEADERS,
-                "body": json.dumps({"message": "userid missing."})
-            }
+        # Validate required fields
+        required_fields = ["userid", "username", "picture"]
+        for field in required_fields:
+            if field not in event_body:
+                return {
+                    "statusCode": 400,
+                    "headers": CORS_HEADERS,
+                    "body": json.dumps({"message": f"{field} missing."})
+                }
         
         userid = event_body['userid']
-        username = event_body.get('username', '')
-        picture = event_body.get('picture', '')
+        username = event_body['username']
+        picture = event_body['picture']
 
         # Establish DB connection
         secret_manager = boto3.client('secretsmanager')
@@ -60,46 +65,46 @@ def lambda_handler(event, context):
 
         try:
             # Check if user exists
-            sql = "SELECT username, picture, bio FROM UserInfo WHERE userid = %s;"
-            rows = datatier.retrieve_all_rows(db_conn, sql, [userid])
+            check_sql = "SELECT username, picture, bio FROM UserInfo WHERE userid = %s;"
+            existing_user = datatier.retrieve_one_row(db_conn, check_sql, [userid])
             
-            if rows:
+            if existing_user:
                 # User exists, return their info
-                user_data = rows[0]
                 return {
                     "statusCode": 200,
                     "headers": CORS_HEADERS,
                     "body": json.dumps({
-                        "username": user_data[0],
-                        "picture": user_data[1],
-                        "bio": user_data[2]
+                        "username": existing_user[0],
+                        "picture": existing_user[1],
+                        "bio": existing_user[2] if existing_user[2] else "This user hasn't written a bio yet."
                     })
                 }
             else:
                 # User doesn't exist, create new user
-                # Generate username from email if not provided
-                if not username:
-                    username = userid.split('@')[0]  # Use part before @ as username
-                
-                # Set default picture if not provided
-                if not picture:
-                    picture = "https://via.placeholder.com/150"
-                
-                placeholder_bio = "Biography!"
-                
+                placeholder_bio = "This user hasn't written a bio yet."
                 insert_sql = "INSERT INTO UserInfo (userid, username, picture, bio) VALUES (%s, %s, %s, %s);"
-                datatier.perform_action(db_conn, insert_sql, [userid, username, picture, placeholder_bio])
                 
-                return {
-                    "statusCode": 200,
-                    "headers": CORS_HEADERS,
-                    "body": json.dumps({
-                        "username": username,
-                        "picture": picture,
-                        "bio": placeholder_bio,
-                        "message": "New user created"
-                    })
-                }
+                rows_affected = datatier.perform_action(db_conn, insert_sql, [userid, username, picture, placeholder_bio])
+                
+                if rows_affected > 0:
+                    return {
+                        "statusCode": 201,
+                        "headers": CORS_HEADERS,
+                        "body": json.dumps({
+                            "username": username,
+                            "picture": picture,
+                            "bio": placeholder_bio,
+                            "message": "New user created successfully."
+                        })
+                    }
+                else:
+                    return {
+                        "statusCode": 400,
+                        "headers": CORS_HEADERS,
+                        "body": json.dumps({
+                            "message": "Failed to create new user."
+                        })
+                    }
 
         except Exception as e:
             print("Database operation ERR:", e)
@@ -107,7 +112,7 @@ def lambda_handler(event, context):
                 "statusCode": 400,
                 "headers": CORS_HEADERS,
                 "body": json.dumps({
-                    "message": f"An error occurred (user_profile): {str(e)}"
+                    "message": f"An error occurred (user_management): {str(e)}"
                 })
             }
 
@@ -116,6 +121,6 @@ def lambda_handler(event, context):
             "statusCode": 400,
             "headers": CORS_HEADERS,
             "body": json.dumps({
-                "message": f"An error occurred (user_profile): {str(e)}"
+                "message": f"An error occurred (user_management): {str(e)}"
             })
         }
