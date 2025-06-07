@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -10,22 +10,88 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import RepeatOutlinedIcon from '@mui/icons-material/RepeatOutlined';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import CloseIcon from '@mui/icons-material/Close'; // <-- Import Close icon
-
-/*
-
-When a user clicks the comment (reply) button, 
-it will make the post sticky to the top of the screen to see 
-as the RootPost. 
-
-The RootPost will show this Post, and will handle showing the 
-comments within this individual post as well. 
-*/
+import CloseIcon from '@mui/icons-material/Close';
+import axios from 'axios';
+import { useUser } from '../context/UserContext';
 
 const RootPost = ({ post, setRootPost }) => {
-  if (post === true ) {
-    return <></>
+  const { user } = useUser();
+
+  const [postState, setPostState] = useState({
+    liked: post.liked,
+    retweeted: post.retweeted,
+    likes: post.likes,
+    retweets: post.retweets,
+    replies: post.replies,
+  });
+
+  if (!post || post === true) {
+    return null;
   }
+
+  const toggleLike = async () => {
+    const isLiked = postState.liked;
+
+    // Optimistically update UI
+    setPostState(prev => ({
+      ...prev,
+      liked: !isLiked,
+      likes: isLiked ? prev.likes - 1 : prev.likes + 1,
+    }));
+
+    try {
+      const baseurl = import.meta.env.VITE_API_BASE_URL;
+      const endpoint = isLiked ? 'tweets/unlike' : 'tweets/like';
+      const url = baseurl + endpoint;
+
+      await axios.post(url, {
+        userid: user.email,
+        postid: post.postid,
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      // Revert on error
+      setPostState(prev => ({
+        ...prev,
+        liked: isLiked,
+        likes: isLiked ? prev.likes + 1 : prev.likes - 1,
+      }));
+      console.error('Failed to toggle like:', error);
+    }
+  };
+
+  const toggleRetweet = async () => {
+    const isRetweeted = postState.retweeted;
+
+    // Optimistically update UI
+    setPostState(prev => ({
+      ...prev,
+      retweeted: !isRetweeted,
+      retweets: isRetweeted ? prev.retweets - 1 : prev.retweets + 1,
+    }));
+
+    try {
+      const baseurl = import.meta.env.VITE_API_BASE_URL;
+      const endpoint = isRetweeted ? 'tweets/unretweet' : 'tweets/retweet';
+      const url = baseurl + endpoint;
+
+      await axios.post(url, {
+        userid: user.email,
+        postid: post.postid,
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      // Revert on error
+      setPostState(prev => ({
+        ...prev,
+        retweeted: isRetweeted,
+        retweets: isRetweeted ? prev.retweets + 1 : prev.retweets - 1,
+      }));
+      console.error('Failed to toggle retweet:', error);
+    }
+  };
 
   return (
     <Box
@@ -38,7 +104,7 @@ const RootPost = ({ post, setRootPost }) => {
         border: '2px solid #4CAF50',
         width: 600,
         mx: 'auto',
-        position: 'relative', // <-- Make relative for positioning close icon
+        position: 'relative',
       }}
     >
       {/* Close Button */}
@@ -90,28 +156,28 @@ const RootPost = ({ post, setRootPost }) => {
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton size="small">
-            {post.liked ? (
+          <IconButton size="small" onClick={toggleLike}>
+            {postState.liked ? (
               <FavoriteIcon sx={{ fontSize: 20, color: 'red' }} />
             ) : (
               <FavoriteBorderIcon sx={{ fontSize: 20, color: 'gray' }} />
             )}
           </IconButton>
           <Typography sx={{ color: 'black', mb: 1 }} variant="body2">
-            {post.likes}
+            {postState.likes}
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton size="small">
-            {post.retweeted ? (
+          <IconButton size="small" onClick={toggleRetweet}>
+            {postState.retweeted ? (
               <RepeatIcon sx={{ fontSize: 20, color: 'green' }} />
             ) : (
               <RepeatOutlinedIcon sx={{ fontSize: 20, color: 'gray' }} />
             )}
           </IconButton>
           <Typography sx={{ color: 'black', mb: 1 }} variant="body2">
-            {post.retweets}
+            {postState.retweets}
           </Typography>
         </Box>
 
@@ -120,7 +186,7 @@ const RootPost = ({ post, setRootPost }) => {
             <ChatBubbleOutlineIcon sx={{ fontSize: 20, color: 'gray' }} />
           </IconButton>
           <Typography sx={{ color: 'black', mb: 1 }} variant="body2">
-            {post.replies}
+            {postState.replies}
           </Typography>
         </Box>
       </Box>

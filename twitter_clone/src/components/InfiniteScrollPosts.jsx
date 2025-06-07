@@ -18,7 +18,7 @@ import axios from 'axios';
 import { useUser } from '../context/UserContext';
 
 const getRecentTweets = async ({ userid, postid }) => {
-  if (!userid || !postid) {
+  if (!userid) {
     return [];
   }
 
@@ -150,6 +150,8 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
   const toggleLike = async (post) => {
     const currentState = postStates[post.postid];
     const isLiked = currentState?.liked ?? post.liked;
+
+    console.log("I AM LIKING OR UNLIKING POST: ", post.postid)
     
     // Optimistically update UI
     setPostStates(prev => ({
