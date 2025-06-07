@@ -1,14 +1,16 @@
-import React from 'react';
-import { Box, Container, Paper, Typography, Avatar, Divider, Link } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Container, Paper, Typography, Avatar, Divider, Link, CircularProgress } from '@mui/material';
 import { GoogleLogin } from '@react-oauth/google';
 import { useUser } from '../context/UserContext';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
 import LoginIcon from '@mui/icons-material/Login';
+import axios from 'axios';
 
 const LoginPage = () => {
     const { setUser } = useUser();
     const navigate = useNavigate();
+    const [isLoading, setIsLoading] = useState(false);
 
     return (
         <Box
@@ -83,46 +85,63 @@ const LoginPage = () => {
                     Sign in to continue to your account
                 </Typography>
 
-                {/* Google Login Button */}
+                {/* Google Login Button or Loading */}
                 <Box display="flex" justifyContent="center">
-                    <GoogleLogin
-                        onSuccess={(credentialResponse) => {
-                            let decoded = jwtDecode(credentialResponse.credential);
-                            let name = decoded.name.replace(/\s+/g, '').toLowerCase();
-                            const uniquePart = Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
-                            const username = name + uniquePart;
-                            decoded.username = username;
-                            setUser(decoded);
-                            navigate('/home');
-                            /*
-                            NOTE: 
+                    {isLoading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                            <CircularProgress sx={{ color: '#07670B' }} />
+                        </Box>
+                    ) : (
+                        <GoogleLogin
+                            onSuccess={async (credentialResponse) => {
+                                setIsLoading(true);
+                                try {
+                                    let decoded = jwtDecode(credentialResponse.credential);
+                                    let name = decoded.name.replace(/\s+/g, '').toLowerCase();
+                                    const uniquePart = Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
+                                    decoded.username = name + uniquePart;
+                                    
+                                    const baseurl = import.meta.env.VITE_API_BASE_URL;
+                                    const endpoint = 'users/create/';
+                                    const url = baseurl + endpoint;
 
-                            Right now we ALWAYS add a new userid... 
-                            We need to udpate this to check if the decoded.email
-                            exists in the database. If it does, use that userid. 
+                                    const response = await axios.post(
+                                        url,
+                                        { 
+                                            userid: decoded.email,
+                                            username: name + uniquePart,
+                                            picture: decoded.picture
+                                        },
+                                        { headers: { 'Content-Type': 'application/json' } }
+                                    );
+                                    
+                                    const { username, picture, bio } = response.data;
 
-                            Otherwise it is new and we can store it into the database
-                            
-                            Pseudo:
+                                    if (username === "") {
+                                        decoded.bio = bio;
+                                    }
+                                    else {
+                                        decoded.username = username;
+                                        decoded.picture = picture;
+                                        decoded.bio = bio;
+                                    }
 
-                            if (user email exists in database) {
-                                decoded[userid] = userid in database
-                                
-                            } else {
-                                decoded[userid] = generate new id;
-                            }
-                            setUser()
-                            navigate()
-                            */
-                        
-                        }}
-                        onError={() => {
-                            console.log('Login Failed');
-                        }}
-                        theme="outline"
-                        size="large"
-                        width="100%"
-                    />
+                                    setUser(decoded);
+                                    navigate('/home');
+                                } catch (error) {
+                                    console.error('Login error:', error);
+                                    setIsLoading(false);
+                                }
+                            }}
+                            onError={() => {
+                                console.log('Login Failed');
+                                setIsLoading(false);
+                            }}
+                            theme="outline"
+                            size="large"
+                            width="100%"
+                        />
+                    )}
                 </Box>
 
                 {/* Bottom accent line */}
