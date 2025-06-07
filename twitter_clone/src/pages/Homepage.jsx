@@ -82,7 +82,7 @@ export default function Homepage() {
                 <Prompt rootPost={rootPost} setRootPost={setRootPost} reload={reload} setReload={setReload}/>
                 
                 {/* Post Section */}
-                <InfiniteScrollPosts rootPost={rootPost} setRootPost={setRootPost} reload={reload} setReload={setReload} />
+                <InfiniteScrollPosts rootPost={rootPost} setRootPost={setRootPost} reload={reload} setReload={setReload}/>
 
             </Box>
 

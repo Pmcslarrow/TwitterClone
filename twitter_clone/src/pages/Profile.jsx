@@ -22,6 +22,7 @@ export default function Profile() {
     const [leftOpen, setLeftOpen] = useState(false);
     const [rightOpen, setRightOpen] = useState(false);
     const [rootPost, setRootPost] = useState(null);
+    const [reload, setReload] = useState(false);
     const { profileuserid } = useParams(); // Profile who's page we are visiting
     
     return (
@@ -105,12 +106,12 @@ export default function Profile() {
                 }
 
             {/* If comment is selected, rootPost has a value. This means it will only show the rootPost and comments for this post */}
-                <InfiniteScrollPosts rootPost={rootPost} setRootPost={setRootPost}/>
+                <InfiniteScrollPosts rootPost={rootPost} setRootPost={setRootPost} reload={reload} setReload={setReload}/>
 
             </Box>
 
             {/* Drawers */}
-            <LeftDrawer props={{ leftOpen, setLeftOpen }} />
+            <LeftDrawer props={{ leftOpen, setLeftOpen, setRootPost }} />
             <RightDrawer props={{ rightOpen, setRightOpen }} />
         </Box>
     );
