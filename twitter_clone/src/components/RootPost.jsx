@@ -132,7 +132,7 @@ const RootPost = ({ post, setRootPost }) => {
           {post.poster[0].toUpperCase()}
         </Avatar>
         <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'black' }}>
-          @{post.poster}
+          {post.username}
         </Typography>
       </Box>
 

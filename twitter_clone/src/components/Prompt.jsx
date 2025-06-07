@@ -66,7 +66,7 @@ const Prompt = ({ rootPost, setRootPost, reload, setReload }) => {
         variant="outlined"
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        placeholder={rootPost ? `Reply to ${rootPost?.poster}...` : "What's happening?"}
+        placeholder={rootPost ? `Reply to ${rootPost?.username}...` : "What's happening?"}
         InputLabelProps={{
           shrink: true,
         }}
