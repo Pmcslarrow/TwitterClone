@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography, CircularProgress } from '@mui/material';
 import axios from 'axios';
+import { useUser } from '../context/UserContext';
 
 const Prompt = ({ rootPost, setRootPost, reload, setReload }) => {
   const [prompt, setPrompt] = useState('');
+  const { user, setUser } = useUser()
   const maxChars = 500;
 
   const handleSubmit = async (e) => {
@@ -16,7 +18,7 @@ const Prompt = ({ rootPost, setRootPost, reload, setReload }) => {
           const endpoint = 'tweets/create';
           const url = baseurl + endpoint;
           console.log(prompt)
-          const response = await axios.post(url, { userid: 'Alice406@example.com', root_post_id: rootPost.postid, textcontent: prompt }, {
+          const response = await axios.post(url, { userid: user.email, root_post_id: rootPost.postid, textcontent: prompt }, {
             headers: { 'Content-Type': 'application/json' }
           });
           console.log(response);
@@ -26,7 +28,7 @@ const Prompt = ({ rootPost, setRootPost, reload, setReload }) => {
           const endpoint = 'tweets/create';
           const url = baseurl + endpoint;
           console.log(prompt)
-          const response = await axios.post(url, { userid: 'Alice406@example.com', textcontent: prompt }, {
+          const response = await axios.post(url, { userid: user.email, textcontent: prompt }, {
             headers: { 'Content-Type': 'application/json' }
           });
           console.log(response);

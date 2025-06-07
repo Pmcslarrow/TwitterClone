@@ -17,8 +17,6 @@ export default function Profile() {
     const [rootPost, setRootPost] = useState(null);
     const [reload, setReload] = useState(false);
     const { profileUsername } = useParams(); // Profile who's page we are visiting
-
-    console.log("profileUsername in Profile.jsx: ", profileUsername)
     
     return (
         <Box

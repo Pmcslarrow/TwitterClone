@@ -32,6 +32,7 @@ const getUsers = async (currentUserId) => {
 
 export default function RightDrawer({ props }) {
   const { rightOpen, setRightOpen } = props;
+  // const { user, useUser } = useUser()
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +43,7 @@ export default function RightDrawer({ props }) {
     const fetchUsers = async () => {
       if (rightOpen) {
         setIsLoading(true);
-        const fetchedUsers = await getUsers('Alice406@example.com'); // Replace with actual current user ID
+        const fetchedUsers = await getUsers(user.email); // Replace with actual current user ID
         setUsers(fetchedUsers);
         setIsLoading(false);
       }

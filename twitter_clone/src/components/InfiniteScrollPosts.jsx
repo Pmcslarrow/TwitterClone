@@ -17,7 +17,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 import axios from 'axios';
 import { useUser } from '../context/UserContext';
 
-const getRecentTweets = async ({ postid }) => {
+const getRecentTweets = async ({ userid, postid }) => {
+  if (!userid || !postid) {
+    return [];
+  }
+
   const baseurl = import.meta.env.VITE_API_BASE_URL;
   const endpoint = 'tweets/recent';
   const url = baseurl + endpoint;
@@ -25,7 +29,7 @@ const getRecentTweets = async ({ postid }) => {
   try {
     const response = await axios.post(
       url,
-      { userid: 'Alice406@example.com', postid },
+      { userid: userid, postid },
       { headers: { 'Content-Type': 'application/json' } }
     );
     const tweets = response.data;
@@ -72,14 +76,14 @@ const getRecentTweets = async ({ postid }) => {
 };
 
 function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
-  const { logged_in_userid, updateUser } = useUser();
+  const { user, updateUser } = useUser();
   const containerRef = useRef(null);
   const CHUNK_SIZE = 10;
   const [originalPosts, setOriginalPosts] = useState([]);
   const [allPosts, setAllPosts] = useState([]);
   const [visiblePosts, setVisiblePosts] = useState([]);
   const [isFetching, setIsFetching] = useState(false);
-  
+    
   // Add state for tracking post interactions
   const [postStates, setPostStates] = useState({});
   
@@ -89,10 +93,10 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
     const fetchData = async () => {
       setIsFetching(true);
 
-      const tweets = await getRecentTweets({ postid: rootPost ? rootPost.postid : undefined });
+      const tweets = await getRecentTweets({ userid: user?.email, postid: rootPost ? rootPost.postid : undefined });
 
       setAllPosts(tweets);
-      setVisiblePosts(tweets.slice(0, CHUNK_SIZE));
+      setVisiblePosts(tweets ? tweets.slice(0, CHUNK_SIZE) : null);
       
       // Initialize post states
       const initialStates = {};
@@ -163,7 +167,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
       const url = baseurl + endpoint;
 
       const response = await axios.post(url, { 
-        userid: 'Alice406@example.com', 
+        userid: user.email, 
         postid: post.postid 
       }, {
         headers: { 'Content-Type': 'application/json' }
@@ -204,7 +208,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
       const url = baseurl + endpoint;
 
       const response = await axios.post(url, { 
-        userid: 'Alice406@example.com', 
+        userid: user.email, 
         postid: post.postid 
       }, {
         headers: { 'Content-Type': 'application/json' }
@@ -239,7 +243,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      const updatedTweets = await getRecentTweets({ postid: undefined });
+      const updatedTweets = await getRecentTweets({ userid: user.email, postid: undefined });
       setReload(true);
       setIsFetching(true);
       setOriginalPosts(updatedTweets);
@@ -365,7 +369,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
                 </Box>
               </Box>
             
-              {String(post.poster) === String('Alice406@example.com') && (
+              {String(post.poster) === String(user.email) && (
                 <IconButton size="small" onClick={() => handleDelete(post.postid)}>
                   <DeleteIcon sx={{ fontSize: 20, color: 'gray' }} />
                 </IconButton>

@@ -14,9 +14,6 @@ export default function ProfileHeader({ bio, picture }) {
 
     const canEdit = (user?.username === profileUsername )
 
-
-    console.log(user)
-
     if (editing) {
         return <EditProfile setEditing={setEditing}/>
     }
