@@ -24,6 +24,7 @@ def serialize_rows(rows, include_likes_retweets=True):
            "userid": row[1],
            "dateposted": row[2].strftime('%Y-%m-%d %H:%M:%S') if isinstance(row[2], datetime) else row[2],
            "content": row[3],
+           "image": row[4],
            "username": row[8] if include_likes_retweets else row[6],
        }
 
