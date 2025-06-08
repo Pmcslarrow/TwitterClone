@@ -56,6 +56,8 @@ export default function ProfileHeader({ isUserFollowed, setIsUserFollowed, isUse
         fetchUser();
     }, [profileUsername, refresh]);
 
+    // console.log(user)
+
     const handleFollow = async (follower, followee, action = 'follow') => {
         setIsLoading(true);
         const endpoint = action === 'unfollow' ? 'users/unfollow' : 'users/follow';
@@ -67,7 +69,7 @@ export default function ProfileHeader({ isUserFollowed, setIsUserFollowed, isUse
                 { follower, followee_username: followee },
                 { headers: { 'Content-Type': 'application/json' } }
             );
-            console.log(`${action} response:`, response.data);
+            // console.log(`${action} response:`, response.data);
             setRefresh(prev => !prev); // Trigger refetch
         } catch (error) {
             console.error(`Error during ${action}:`, error);
@@ -87,7 +89,7 @@ export default function ProfileHeader({ isUserFollowed, setIsUserFollowed, isUse
                 { blocker, blockee_username: blockee },
                 { headers: { 'Content-Type': 'application/json' } }
             );
-            console.log(`${action} response:`, response.data);
+            // console.log(`${action} response:`, response.data);
             setRefresh(prev => !prev); // Trigger refetch
         } catch (error) {
             console.error(`Error during ${action}:`, error);
@@ -120,7 +122,7 @@ export default function ProfileHeader({ isUserFollowed, setIsUserFollowed, isUse
             }}
         >
             <Avatar
-                src={picture}
+                src={canEdit ? user?.picture : picture}
                 alt={profileUsername}
                 sx={{
                     width: 100,
