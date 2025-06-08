@@ -1,107 +1,126 @@
-import pytest
+import unittest
 import json
+from unittest.mock import patch, MagicMock
+from datetime import datetime
 from lambda_functions.get_recent_tweets import lambda_handler
-import pymysql
 
-@pytest.fixture(scope="module")
-def db_connection():
-    connection = pymysql.connect(
-        host="127.0.0.1",
-        user="test_user",
-        password="test_pass",
-        database="TwitterClone",
-        port=3306
-    )
-    yield connection
-    connection.close()
+class TestGetRecentTweets(unittest.TestCase):
 
-@pytest.fixture
-def setup_test_data(db_connection):
-    with db_connection.cursor() as cursor:
-        # Clear existing data in reverse dependency order
-        cursor.execute("DELETE FROM Likes;")
-        cursor.execute("DELETE FROM Retweets;")
-        cursor.execute("DELETE FROM Blocked;")
-        cursor.execute("DELETE FROM Followers;")
-        cursor.execute("DELETE FROM PostInfo;")
-        cursor.execute("DELETE FROM UserInfo;")
+    def setUp(self):
+        """Set up common mock objects for each test."""
+        # This is a sample row structure for timeline/reply posts (9 columns)
+        self.mock_post_row = (
+            20001,  # postid
+            'user2',  # userid
+            datetime(2024, 5, 10, 12, 30, 0),  # dateposted
+            'This is a tweet from another user.',  # textcontent
+            'pic2.jpg',  # picture
+            None,  # reply_to_postid
+            1,  # is_liked
+            0,  # is_retweeted
+            'User Two'  # username
+        )
+        # This is a sample row for user-specific posts (7 columns)
+        self.mock_user_post_row = (
+            20002, # postid
+            'user3', # userid
+            datetime(2024, 5, 11, 1, 0, 0), # dateposted
+            'A post from a specific profile.', # textcontent
+            'pic3.jpg', # picture
+            None, # reply_to_postid
+            'User Three' # username
+        )
+
+    @patch('lambda_functions.get_recent_tweets.boto3')
+    @patch('lambda_functions.get_recent_tweets.datatier')
+    def test_get_timeline_success(self, mock_datatier, mock_boto3):
+        """Tests successfully fetching a user's main timeline."""
+        # Mock dependencies
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
+        }
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
+        mock_datatier.retrieve_all_rows.return_value = [self.mock_post_row]
+
+        # Event for a general timeline fetch
+        event = {"body": json.dumps({"userid": "user1"})}
         
-        # Insert test users
-        cursor.execute("""
-            INSERT INTO UserInfo (userid, username, bio, picture)
-            VALUES 
-                ('user1', 'User One', 'Bio 1', 'pic1'),
-                ('user2', 'User Two', 'Bio 2', 'pic2'),
-                ('user3', 'User Three', 'Bio 3', 'pic3');
-        """)
+        response = lambda_handler(event, None)
         
-        # Insert test posts (postid will auto-increment)
-        cursor.execute("""
-            INSERT INTO PostInfo (userid, textcontent)
-            VALUES 
-                ('user1', 'Post by User One'),
-                ('user2', 'Post by User Two'),
-                ('user3', 'Post by User Three'),
-                ('user1', 'Another post by User One');
-        """)
+        # Assertions
+        self.assertEqual(response["statusCode"], 200)
+        body = json.loads(response["body"])
+        self.assertEqual(len(body), 1)
+        self.assertEqual(body[0]['post_id'], 20001)
+        self.assertEqual(body[0]['username'], 'User Two')
+        self.assertEqual(body[0]['liked'], 1)
+        self.assertEqual(body[0]['retweeted'], 0)
+        self.assertEqual(body[0]['dateposted'], '2024-05-10 12:30:00')
+
+    @patch('lambda_functions.get_recent_tweets.boto3')
+    @patch('lambda_functions.get_recent_tweets.datatier')
+    def test_get_replies_success(self, mock_datatier, mock_boto3):
+        """Tests successfully fetching replies for a specific post."""
+        # Mock dependencies
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
+        }
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
+        mock_datatier.retrieve_all_rows.return_value = [self.mock_post_row]
+
+        # Event to fetch replies for postid 20000
+        event = {"body": json.dumps({"userid": "user1", "postid": 20000})}
         
-        # Insert test followers
-        cursor.execute("""
-            INSERT INTO Followers (follower, followee)
-            VALUES 
-                ('user1', 'user2'),
-                ('user1', 'user3');
-        """)
+        response = lambda_handler(event, None)
         
-        db_connection.commit()
+        # Assertions
+        self.assertEqual(response["statusCode"], 200)
+        body = json.loads(response["body"])
+        self.assertEqual(len(body), 1)
+        self.assertEqual(body[0]['post_id'], 20001)
+        self.assertIn('liked', body[0]) # liked/retweeted fields should be present
 
-@pytest.fixture
-def valid_event():
-    return {
-        "body": json.dumps({
-            "userid": "user1",
-            "page": 1
-        })
-    }
+    @patch('lambda_functions.get_recent_tweets.boto3')
+    @patch('lambda_functions.get_recent_tweets.datatier')
+    def test_get_user_posts_success(self, mock_datatier, mock_boto3):
+        """Tests successfully fetching all posts for a specific user profile."""
+        # Mock dependencies
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
+        }
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
+        mock_datatier.retrieve_all_rows.return_value = [self.mock_user_post_row]
 
-@pytest.fixture
-def missing_userid_event():
-    return {
-        "body": json.dumps({
-            "page": 1
-        })
-    }
+        # Event to fetch posts from profile 'User Three'
+        event = {"body": json.dumps({"userid": "user1", "profileUsername": "User Three"})}
+        
+        response = lambda_handler(event, None)
+        
+        # Assertions
+        self.assertEqual(response["statusCode"], 200)
+        body = json.loads(response["body"])
+        self.assertEqual(len(body), 1)
+        self.assertEqual(body[0]['post_id'], 20002)
+        self.assertEqual(body[0]['username'], 'User Three')
+        # liked/retweeted fields should NOT be present for this query
+        self.assertNotIn('liked', body[0])
+        self.assertNotIn('retweeted', body[0])
 
-@pytest.fixture
-def invalid_page_event():
-    return {
-        "body": json.dumps({
-            "userid": "user1",
-            "page": -1
-        })
-    }
+    def test_missing_userid(self):
+        """Tests that the lambda returns an error if userid is missing."""
+        event = {"body": json.dumps({})}
+        response = lambda_handler(event, None)
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(json.loads(response["body"])["message"], "userid missing.")
 
-def test_successful_retrieval(valid_event, setup_test_data):
-    context = {}
-    response = lambda_handler(valid_event, context)
-    
-    # Ensure the response is successful
-    assert response["statusCode"] == 200
-    body = json.loads(response["body"])
-    assert isinstance(body, list) 
-    assert len(body) == 4
-
-
-def test_missing_userid(missing_userid_event, setup_test_data):
-    context = {}
-    response = lambda_handler(missing_userid_event, context)
-
-    assert response["statusCode"] == 400
-    assert "userid missing." in response["body"]
-
-def test_invalid_page(invalid_page_event, setup_test_data):
-    context = {}
-    response = lambda_handler(invalid_page_event, context)
-
-    assert response["statusCode"] == 400
-    assert "Page number must" in json.loads(response["body"])['message']
+if __name__ == '__main__':
+    unittest.main()

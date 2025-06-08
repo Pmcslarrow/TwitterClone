@@ -1,94 +1,111 @@
-import pytest
-import pymysql
+import unittest
 import json
+from unittest.mock import patch, MagicMock
 from lambda_functions.update_profile import lambda_handler
 
-@pytest.fixture(scope="module")
-def db_connection():
-    # Connect to the local MySQL database running in Docker
-    connection = pymysql.connect(
-        host="127.0.0.1",
-        user="test_user",
-        password="test_pass",
-        database="TwitterClone",
-        port=3306
-    )
-    yield connection
-    connection.close()
+class TestUpdateProfile(unittest.TestCase):
 
-@pytest.fixture
-def setup_test_data(db_connection):
-    # Insert test data into the database
-    with db_connection.cursor() as cursor:
-        cursor.execute("DELETE FROM UserInfo;")  # Clear existing data
-        cursor.execute("""
-            INSERT INTO UserInfo (userid, username, bio, picture)
-            VALUES ('123', 'test_user', 'Test bio', 'test_picture_url');
-        """)
-        db_connection.commit()
-
-def test_successful_update(db_connection, setup_test_data):
-    # Define the event to simulate the Lambda invocation
-    event = {
-        "body": json.dumps({
-            "userid": "123",
-            "bio": "Updated bio",
-            "username": "updated_user",
-            "picture": "updated_picture_url"
-        })
-    }
-    context = {}
-
-    # Invoke the Lambda function
-    response = lambda_handler(event, context)
-
-    # Assert the response
-    assert response["statusCode"] == 200
-    assert "Profile updated successfully" in response["body"]
-
-    # Verify the database was updated
-    with db_connection.cursor() as cursor:
-        cursor.execute("SELECT bio, username, picture FROM UserInfo WHERE userid = '123';")
-        result = cursor.fetchone()
-        assert result == ("Updated bio", "updated_user", "updated_picture_url")
-
-def test_successful_update_single_key(db_connection, setup_test_data):
-    # Passes in key value pairs, but is missing username and picture updates.
-    event = {
-        "body": json.dumps({
-            "userid": "123",
-            "bio": "Updated bio"
-        })
-    }
-    context = {}
-
-    # Invoke the Lambda function
-    response = lambda_handler(event, context)
-
-    # Assert the response
-    assert response["statusCode"] == 200
-    assert "Profile updated successfully" in response["body"]
-
-    # Verify the database was updated
-    with db_connection.cursor() as cursor:
-        cursor.execute("SELECT bio FROM UserInfo WHERE userid = '123';")
-        result = cursor.fetchone()
-        assert result[0] == "Updated bio"
-
-def test_failure_missing_userid(db_connection):
-    # Define the event with missing userid
-    event = {
-        "body": {
-            # "userid": "123",  # Missing userid
-            "bio": "Updated bio",
-            "username": "updated_user"
+    @patch('lambda_functions.update_profile.boto3')
+    @patch('lambda_functions.update_profile.datatier')
+    def test_successful_full_update(self, mock_datatier, mock_boto3):
+        """Tests updating all possible profile fields at once."""
+        # Mock dependencies
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
         }
-    }
-    context = {}
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
+        mock_datatier.perform_action.return_value = None
 
-    # Invoke the Lambda function
-    response = lambda_handler(event, context)
+        # Prepare event with all updateable fields
+        event = {
+            "body": json.dumps({
+                "userid": "123",
+                "bio": "Updated bio",
+                "username": "updated_user",
+                "picture": "updated_picture_url"
+            })
+        }
 
-    # Assert the response
-    assert response["statusCode"] == 400
-    assert "userid missing" in response["body"]
+        response = lambda_handler(event, None)
+
+        # Assert a successful response
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"])["message"], "Profile updated successfully.")
+
+        # Verify the dynamically generated SQL and parameters are correct
+        # Note: The order of columns in the SET clause can vary, so we check the components.
+        args, kwargs = mock_datatier.perform_action.call_args
+        self.assertIn("UPDATE UserInfo", args[1])
+        self.assertIn("SET", args[1])
+        self.assertIn("bio = %s", args[1])
+        self.assertIn("username = %s", args[1])
+        self.assertIn("picture = %s", args[1])
+        self.assertIn("WHERE userid = %s", args[1])
+        self.assertIn("123", args[2]) # Check that the userid is the last parameter
+
+    @patch('lambda_functions.update_profile.boto3')
+    @patch('lambda_functions.update_profile.datatier')
+    def test_successful_partial_update(self, mock_datatier, mock_boto3):
+        """Tests updating only a single profile field."""
+        # Mock dependencies
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
+        }
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
+        mock_datatier.perform_action.return_value = None
+
+        # Event with only 'bio' being updated
+        event = {"body": json.dumps({"userid": "123", "bio": "New bio only"})}
+        
+        response = lambda_handler(event, None)
+
+        # Assert success
+        self.assertEqual(response["statusCode"], 200)
+
+        # Verify SQL is correct for a single field update
+        expected_sql = "\n                UPDATE UserInfo\n                SET bio = %s\n                WHERE userid = %s;\n            "
+        expected_params = ["New bio only", "123"]
+        mock_datatier.perform_action.assert_called_once_with(mock_conn, expected_sql, expected_params)
+
+    def test_failure_missing_userid(self):
+        """Tests that the function fails correctly if userid is missing."""
+        # This test doesn't need mocks as it fails before DB connection
+        event = {"body": json.dumps({"bio": "bio without user"})}
+        
+        response = lambda_handler(event, None)
+        
+        # Assert a 400 Bad Request response
+        self.assertEqual(response["statusCode"], 400)
+        self.assertIn("userid missing", json.loads(response["body"])["message"])
+
+    @patch('lambda_functions.update_profile.boto3')
+    @patch('lambda_functions.update_profile.datatier')
+    def test_ignores_empty_string_values(self, mock_datatier, mock_boto3):
+        """Tests that empty strings are ignored and not included in the update."""
+        # Mock dependencies
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
+        }
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
+        
+        # Event with a valid bio but an empty username
+        event = {"body": json.dumps({"userid": "123", "bio": "A valid bio", "username": ""})}
+        
+        lambda_handler(event, None)
+        
+        # Assert that only the 'bio' field was included in the SQL
+        expected_sql = "\n                UPDATE UserInfo\n                SET bio = %s\n                WHERE userid = %s;\n            "
+        expected_params = ["A valid bio", "123"]
+        mock_datatier.perform_action.assert_called_once_with(mock_conn, expected_sql, expected_params)
+
+if __name__ == '__main__':
+    unittest.main()

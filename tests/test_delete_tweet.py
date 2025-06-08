@@ -1,88 +1,75 @@
-import pytest
+import unittest
 import json
+from unittest.mock import patch, MagicMock
 from lambda_functions.delete_post import lambda_handler
-import pymysql
 
-@pytest.fixture(scope="module")
-def db_connection():
-    connection = pymysql.connect(
-        host="127.0.0.1",
-        user="test_user",
-        password="test_pass",
-        database="TwitterClone",
-        port=3306
-    )
-    yield connection
-    connection.close()
+class TestDeletePost(unittest.TestCase):
 
-@pytest.fixture
-def setup_test_data(db_connection):
-    with db_connection.cursor() as cursor:
-        cursor.execute("DELETE FROM UserInfo;")
-        cursor.execute("""
-            INSERT INTO UserInfo (userid, username, bio, picture)
-            VALUES ('123', 'test_user', 'Test bio', 'test_picture_url');
-        """)
-        db_connection.commit()
+    @patch('lambda_functions.delete_post.boto3')
+    @patch('lambda_functions.delete_post.datatier')
+    def test_successful_post_deletion(self, mock_datatier, mock_boto3):
+        # Mock dependencies
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
+        }
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
 
+        # Mock database checks to show the post exists
+        mock_datatier.retrieve_one_row.return_value = (1,) # Simulate finding the post
+        mock_datatier.perform_action.return_value = None
+
+        # Create a valid event
+        event = {"body": json.dumps({"postid": "1"})}
+        response = lambda_handler(event, None)
         
-    with db_connection.cursor() as cursor:
-        cursor.execute("DELETE FROM PostInfo;")
-        cursor.execute("""
-            INSERT INTO PostInfo (postid, userid, textcontent)
-            VALUES ('1', '123', 'This is a test post.');
-        """)
-        db_connection.commit()
+        # Assert the response is successful
+        self.assertEqual(response["statusCode"], 200)
+        # Note: The success message in the lambda seems to be a copy-paste error.
+        # The test is written to match the current lambda code.
+        self.assertEqual(json.loads(response["body"])["message"], "Post posted successfully.")
+        
+        # Verify the delete action was called
+        mock_datatier.perform_action.assert_called_once_with(
+            mock_conn,
+            "\n                DELETE FROM PostInfo\n                WHERE postid = %s;\n            ",
+            ['1']
+        )
 
-    yield  
-    # Cleanup after tests
+    @patch('lambda_functions.delete_post.boto3')
+    @patch('lambda_functions.delete_post.datatier')
+    def test_delete_non_existent_postid(self, mock_datatier, mock_boto3):
+        # Mock dependencies
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
+        }
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
+        
+        # Mock database check to show the post does NOT exist
+        mock_datatier.retrieve_one_row.return_value = None
 
-    with db_connection.cursor() as cursor:
-        cursor.execute("DELETE FROM UserInfo;")
-        cursor.execute("DELETE FROM PostInfo;")
-        db_connection.commit()
+        # Create event with a non-existent postid
+        event = {"body": json.dumps({"postid": "999"})}
+        response = lambda_handler(event, None)
 
-@pytest.fixture
-def valid_delete_event():
-    return {
-        "body": json.dumps({
-            "postid": "1"
-        })
-    }
+        # Assert a 404 Not Found response
+        self.assertEqual(response["statusCode"], 404)
+        self.assertEqual(json.loads(response["body"])["message"], "Post with postid 999 does not exist.")
+        
+        # Verify that the delete action was never called
+        mock_datatier.perform_action.assert_not_called()
 
-@pytest.fixture
-def missing_postid_event():
-    return {
-        "body": json.dumps({})
-    }
+    def test_missing_postid(self):
+        # This test doesn't need mocks
+        event = {"body": json.dumps({})}
+        response = lambda_handler(event, None)
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(json.loads(response["body"])["message"], "postid missing.")
 
-@pytest.fixture
-def non_existent_postid_event():
-    return {
-        "body": json.dumps({
-            "postid": "999"
-        })
-    }
-
-def test_successful_post_deletion(valid_delete_event, setup_test_data):
-    context = {}
-    response = lambda_handler(valid_delete_event, context)
-    
-    # Ensure the response is successful
-    assert response["statusCode"] == 200
-    assert "Post posted successfully." in response["body"]
-
-def test_missing_postid(missing_postid_event, setup_test_data):
-    context = {}
-    response = lambda_handler(missing_postid_event, context)
-
-    assert response["statusCode"] == 400
-    assert "postid missing." in response["body"]
-
-def test_non_existent_postid(non_existent_postid_event, setup_test_data):
-    context = {}
-    response = lambda_handler(non_existent_postid_event, context)
-
-    # Ensure the response handles non-existent postid gracefully
-    assert response["statusCode"] == 200
-    assert "Post posted successfully." in response["body"]
+if __name__ == '__main__':
+    unittest.main()

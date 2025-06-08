@@ -3,7 +3,10 @@
 
 from configparser import ConfigParser
 import os
-import datatier
+try:
+    import datatier
+except:
+    from . import datatier
 import json
 import boto3
 

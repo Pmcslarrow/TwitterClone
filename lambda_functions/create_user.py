@@ -3,7 +3,10 @@ import os
 import json
 import boto3
 from datetime import datetime
-import datatier
+try:
+    import datatier
+except:
+    from . import datatier
 
 CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',

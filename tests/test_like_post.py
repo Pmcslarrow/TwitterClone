@@ -1,93 +1,68 @@
-import pytest
+import unittest
 import json
+from unittest.mock import patch, MagicMock
 from lambda_functions.like_post import lambda_handler
-import pymysql
 
-@pytest.fixture(scope="module")
-def db_connection():
-    connection = pymysql.connect(
-        host="127.0.0.1",
-        user="test_user",
-        password="test_pass",
-        database="TwitterClone",
-        port=3306
-    )
-    yield connection
-    connection.close()
+class TestLikePost(unittest.TestCase):
 
-@pytest.fixture
-def setup_test_data(db_connection):
-    with db_connection.cursor() as cursor:
-        # Clear existing data in reverse dependency order
-        cursor.execute("DELETE FROM Likes;")
-        cursor.execute("DELETE FROM PostInfo;")
-        cursor.execute("DELETE FROM UserInfo;")
-        
-        # Insert test users
-        cursor.execute("""
-            INSERT INTO UserInfo (userid, username, bio, picture)
-            VALUES 
-                ('user1', 'User One', 'Bio 1', 'pic1'),
-                ('user2', 'User Two', 'Bio 2', 'pic2');
-        """)
-        
-        # Insert test posts
-        cursor.execute("""
-            INSERT INTO PostInfo (postid, userid, textcontent)
-            VALUES 
-                (20001, 'user1', 'Post by User One'),
-                (20002, 'user2', 'Post by User Two');
-        """)
-        
-        db_connection.commit()
-        print("Database changes committed.")
-    print("Test data setup complete.")
+    @patch('lambda_functions.like_post.boto3')
+    @patch('lambda_functions.like_post.datatier')
+    def test_successful_like(self, mock_datatier, mock_boto3):
+        # Mock Secrets Manager
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
+        }
 
-@pytest.fixture
-def valid_like_event():
-    return {
-        "body": json.dumps({
-            "userid": "user1",
-            "postid": 20001
-        })
-    }
+        # Setup mock database connection
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
 
-@pytest.fixture
-def missing_userid_event():
-    return {
-        "body": json.dumps({
-            "postid": 20001
-        })
-    }
+        # Mock database calls: No existing like found
+        mock_datatier.retrieve_one_row.return_value = None
+        mock_datatier.perform_action.return_value = None
 
-@pytest.fixture
-def missing_postid_event():
-    return {
-        "body": json.dumps({
-            "userid": "user1"
-        })
-    }
+        event = {'body': json.dumps({'userid': 'user1', 'postid': 20001})}
+        response = lambda_handler(event, None)
 
-def test_successful_like(valid_like_event, setup_test_data):
-    context = {}
-    response = lambda_handler(valid_like_event, context)
-    
-    # Ensure the response is successful
-    assert response["statusCode"] == 200
-    assert "Successfully added like" in response["body"]
+        self.assertEqual(response['statusCode'], 200)
+        self.assertEqual(response['body'], "Successfully added like to the Likes table.")
 
-def test_missing_userid(missing_userid_event, setup_test_data):
-    context = {}
-    response = lambda_handler(missing_userid_event, context)
+    @patch('lambda_functions.like_post.boto3')
+    @patch('lambda_functions.like_post.datatier')
+    def test_already_liked(self, mock_datatier, mock_boto3):
+        # Mock Secrets Manager
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
+        }
 
-    # Ensure the response returns an error for missing userid
-    assert response["statusCode"] == 400
-    assert "userid missing." in response["body"]
+        # Setup mock database connection
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
 
-def test_missing_postid(missing_postid_event, setup_test_data):
-    context = {}
-    response = lambda_handler(missing_postid_event, context)
+        # Mock database calls: An existing like is found
+        mock_datatier.retrieve_one_row.return_value = ('user1', 20001)
 
-    # Ensure the response returns an error for missing postid
-    assert response["statusCode"] == 400
-    assert "postid missing." in response["body"]
+        event = {'body': json.dumps({'userid': 'user1', 'postid': 20001})}
+        response = lambda_handler(event, None)
+
+        self.assertEqual(response['statusCode'], 409)
+        self.assertEqual(json.loads(response['body'])['message'], "User has already liked this post.")
+
+    def test_missing_userid(self):
+        event = {'body': json.dumps({'postid': 20001})}
+        response = lambda_handler(event, None)
+        self.assertEqual(response['statusCode'], 400)
+        self.assertEqual(json.loads(response['body'])['message'], "userid missing.")
+
+    def test_missing_postid(self):
+        event = {'body': json.dumps({'userid': 'user1'})}
+        response = lambda_handler(event, None)
+        self.assertEqual(response['statusCode'], 400)
+        self.assertEqual(json.loads(response['body'])['message'], "postid missing.")
+
+if __name__ == '__main__':
+    unittest.main()

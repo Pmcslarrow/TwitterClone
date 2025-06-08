@@ -1,109 +1,104 @@
-import pytest
+import unittest
 import json
+from unittest.mock import patch, MagicMock
 from lambda_functions.post_tweet import lambda_handler
-import pymysql
 
-@pytest.fixture(scope="module")
-def db_connection():
-    connection = pymysql.connect(
-        host="127.0.0.1",
-        user="test_user",
-        password="test_pass",
-        database="TwitterClone",
-        port=3306
-    )
-    yield connection
-    connection.close()
+class TestPostTweet(unittest.TestCase):
 
-@pytest.fixture
-def setup_test_data(db_connection):
-    with db_connection.cursor() as cursor:
-        cursor.execute("DELETE FROM UserInfo;")
-        cursor.execute("DELETE FROM PostInfo;")
-        cursor.execute("""
-            INSERT INTO UserInfo (userid, username, bio, picture)
-            VALUES ('123', 'test_user', 'Test bio', 'test_picture_url');
-        """)
-        db_connection.commit()
+    @patch('lambda_functions.post_tweet.boto3')
+    @patch('lambda_functions.post_tweet.datatier')
+    def test_successful_tweet_posting(self, mock_datatier, mock_boto3):
+        # Mock Secrets Manager
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
+        }
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
 
-@pytest.fixture
-def valid_event():
-    return {
-        "body": json.dumps({
-            "userid": "123",
-            "textcontent": "This is a valid tweet."
-        })
-    }
+        # Mock the database action
+        mock_datatier.perform_action.return_value = None
 
-@pytest.fixture
-def valid_event_with_image():
-    return {
-        "body": json.dumps({
-            "userid": "123",
-            "textcontent": "This is a valid tweet with an image.",
-            "image_file_key": "uploads/123/image1.jpg"
-        })
-    }
+        # Create a valid event
+        event = {
+            "body": json.dumps({
+                "userid": "123",
+                "textcontent": "This is a valid tweet."
+            })
+        }
+        
+        response = lambda_handler(event, None)
+        
+        # Assert the response is successful
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"])["message"], "Post posted successfully.")
+        
+        # Verify the database action was called correctly
+        mock_datatier.perform_action.assert_called_once_with(
+            mock_conn,
+            "\n                INSERT INTO PostInfo (userid, dateposted, textcontent, image_file_key, reply_to_postid)\n                VALUES (%s, CURRENT_TIMESTAMP, %s, %s, %s);\n            ",
+            ['123', 'This is a valid tweet.', None, None]
+        )
 
-@pytest.fixture
-def long_tweet_event():
-    return {
-        "body": json.dumps({
-            "userid": "123",
-            "textcontent": "A" * 501  # 501 characters long
-        })
-    }
+    @patch('lambda_functions.post_tweet.boto3')
+    @patch('lambda_functions.post_tweet.datatier')
+    def test_successful_tweet_with_image(self, mock_datatier, mock_boto3):
+        # Mock dependencies
+        mock_secrets_manager = MagicMock()
+        mock_boto3.client.return_value = mock_secrets_manager
+        mock_secrets_manager.get_secret_value.return_value = {
+            'SecretString': json.dumps({'host': 'h', 'port': 1, 'username': 'u', 'password': 'p'})
+        }
+        mock_conn = MagicMock()
+        mock_datatier.get_dbConn.return_value = mock_conn
+        mock_datatier.perform_action.return_value = None
 
-@pytest.fixture
-def missing_userid_event():
-    return {
-        "body": json.dumps({
-            "textcontent": "This tweet has no userid."
-        })
-    }
+        # Create event with an image key
+        event = {
+            "body": json.dumps({
+                "userid": "123",
+                "textcontent": "This is a valid tweet with an image.",
+                "image_file_key": "uploads/123/image1.jpg"
+            })
+        }
+        
+        response = lambda_handler(event, None)
+        
+        # Assert success
+        self.assertEqual(response["statusCode"], 200)
+        
+        # Verify the image key was passed to the database action
+        mock_datatier.perform_action.assert_called_once_with(
+            mock_conn,
+            "\n                INSERT INTO PostInfo (userid, dateposted, textcontent, image_file_key, reply_to_postid)\n                VALUES (%s, CURRENT_TIMESTAMP, %s, %s, %s);\n            ",
+            ['123', 'This is a valid tweet with an image.', 'uploads/123/image1.jpg', None]
+        )
 
-def test_successful_tweet_posting(valid_event, setup_test_data, db_connection):
-    context = {}
-    response = lambda_handler(valid_event, context)
-    
-    # Ensure the response is successful
-    assert response["statusCode"] == 200
-    assert "Post posted successfully." in response["body"]
+    def test_tweet_exceeding_character_limit(self):
+        # This test doesn't need mocks as it fails validation first
+        event = {
+            "body": json.dumps({
+                "userid": "123",
+                "textcontent": "A" * 501  # 501 characters
+            })
+        }
+        response = lambda_handler(event, None)
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(json.loads(response["body"])["message"], "Text content exceeds 500 characters.")
 
-    # Verify the database entry
-    with db_connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM PostInfo WHERE userid = '123';")
-        result = cursor.fetchone()
-        assert result is not None
-        assert result[3] == "This is a valid tweet."  # textcontent
-        assert result[4] is None  # image_file_key should be NULL
+    def test_missing_parameters(self):
+        # Test missing userid
+        event_no_userid = {"body": json.dumps({"textcontent": "This tweet has no userid."})}
+        response_no_userid = lambda_handler(event_no_userid, None)
+        self.assertEqual(response_no_userid["statusCode"], 400)
+        self.assertEqual(json.loads(response_no_userid["body"])["message"], "userid missing.")
+        
+        # Test missing textcontent
+        event_no_text = {"body": json.dumps({"userid": "123"})}
+        response_no_text = lambda_handler(event_no_text, None)
+        self.assertEqual(response_no_text["statusCode"], 400)
+        self.assertEqual(json.loads(response_no_text["body"])["message"], "textcontent missing.")
 
-def test_successful_tweet_posting_with_image(valid_event_with_image, setup_test_data, db_connection):
-    context = {}
-    response = lambda_handler(valid_event_with_image, context)
-    
-    # Ensure the response is successful
-    assert response["statusCode"] == 200
-    assert "Post posted successfully." in response["body"]
-
-    # Verify the database entry
-    with db_connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM PostInfo WHERE userid = '123';")
-        result = cursor.fetchone()
-        assert result is not None
-        assert result[3] == "This is a valid tweet with an image."  # textcontent
-        assert result[4] == "uploads/123/image1.jpg"  # image_file_key
-
-def test_tweet_exceeding_character_limit(long_tweet_event, setup_test_data):
-    context = {}
-    response = lambda_handler(long_tweet_event, context)
-
-    assert response["statusCode"] == 400
-    assert "Text content exceeds 500 characters." in response["body"]
-
-def test_missing_userid(missing_userid_event, setup_test_data):
-    context = {}
-    response = lambda_handler(missing_userid_event, context)
-
-    assert response["statusCode"] == 400
-    assert "userid missing." in response["body"]
+if __name__ == '__main__':
+    unittest.main()
