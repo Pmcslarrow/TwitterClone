@@ -1,3 +1,5 @@
+## unfollow_user.py
+
 from configparser import ConfigParser
 import os
 import datatier 
@@ -12,14 +14,13 @@ CORS_HEADERS = {
 }
 
 
-
 def lambda_handler(event, context):
     """
     unfollow_user.py
     --------------
     Receives:
         - The follower userid (who is unfollowing)
-        - The followee userid (who is being unfollowed)
+        - The followee username (who is being unfollowed)
     
     On Success:
         - Removes a follower relationship from the Followers table
@@ -46,17 +47,17 @@ def lambda_handler(event, context):
                 })
             }
         
-        if "followee" not in event_body:
+        if "followee_username" not in event_body:
             return {
                 "statusCode": 400,
                             "headers": CORS_HEADERS,
                                 "body": json.dumps({
-                    "message": "followee userid missing."
+                    "message": "followee_username missing."
                 })
             }
         
         follower = event_body['follower']
-        followee = event_body['followee']
+        followee_username = event_body['followee_username']
 
         # Establishing DB connection
         print("*** Establishing DB connection ***")
@@ -70,10 +71,24 @@ def lambda_handler(event, context):
         rds_pwd = secret['password']
         rds_dbname = "TwitterClone"
 
-
         db_conn = datatier.get_dbConn(rds_endpoint, rds_portnum, rds_username, rds_pwd, rds_dbname)
 
         try:
+            # Get followee userid from username
+            check_followee_sql = "SELECT userid FROM UserInfo WHERE username = %s;"
+            followee_result = datatier.retrieve_all_rows(db_conn, check_followee_sql, [followee_username])
+            
+            if not followee_result:
+                return {
+                    "statusCode": 404,
+                    "headers": CORS_HEADERS,
+                                "body": json.dumps({
+                        "message": "Followee user does not exist."
+                    })
+                }
+            
+            followee = followee_result[0][0]  # Extract userid from result
+            
             # Check if the relationship exists
             check_relationship_sql = "SELECT * FROM Followers WHERE follower = %s AND followee = %s;"
             existing_relationship = datatier.retrieve_all_rows(db_conn, check_relationship_sql, [follower, followee])

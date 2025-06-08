@@ -1,3 +1,5 @@
+## block_user.py
+
 from configparser import ConfigParser
 import os
 import datatier
@@ -18,7 +20,7 @@ def lambda_handler(event, context):
     --------------
     Receives:
         - The blocker userid (who is blocking)
-        - The blockee userid (who is being blocked)
+        - The blockee username (who is being blocked)
     
     On Success:
         - Adds a block relationship to the Blocked table
@@ -46,27 +48,17 @@ def lambda_handler(event, context):
                 })
             }
         
-        if "blockee" not in event_body:
+        if "blockee_username" not in event_body:
             return {
                 "statusCode": 400,
                             "headers": CORS_HEADERS,
                                 "body": json.dumps({
-                    "message": "blockee userid missing."
+                    "message": "blockee_username missing."
                 })
             }
         
         blocker = event_body['blocker']
-        blockee = event_body['blockee']
-
-        # Check if users are trying to block themselves
-        if blocker == blockee:
-            return {
-                "statusCode": 400,
-                            "headers": CORS_HEADERS,
-                                "body": json.dumps({
-                    "message": "Users cannot block themselves."
-                })
-            }
+        blockee_username = event_body['blockee_username']
 
         # Establishing DB connection
         secret_manager = boto3.client('secretsmanager')
@@ -81,7 +73,7 @@ def lambda_handler(event, context):
         db_conn = datatier.get_dbConn(rds_endpoint, rds_portnum, rds_username, rds_pwd, rds_dbname)
 
         try:
-            # Check if users exist
+            # Check if blocker exists
             check_blocker_sql = "SELECT userid FROM UserInfo WHERE userid = %s;"
             blocker_result = datatier.retrieve_all_rows(db_conn, check_blocker_sql, [blocker])
             
@@ -94,8 +86,9 @@ def lambda_handler(event, context):
                     })
                 }
                 
-            check_blockee_sql = "SELECT userid FROM UserInfo WHERE userid = %s;"
-            blockee_result = datatier.retrieve_all_rows(db_conn, check_blockee_sql, [blockee])
+            # Get blockee userid from username
+            check_blockee_sql = "SELECT userid FROM UserInfo WHERE username = %s;"
+            blockee_result = datatier.retrieve_all_rows(db_conn, check_blockee_sql, [blockee_username])
             
             if not blockee_result:
                 return {
@@ -103,6 +96,18 @@ def lambda_handler(event, context):
                     "headers": CORS_HEADERS,
                                 "body": json.dumps({
                         "message": "Blockee user does not exist."
+                    })
+                }
+            
+            blockee = blockee_result[0][0]  # Extract userid from result
+            
+            # Check if users are trying to block themselves
+            if blocker == blockee:
+                return {
+                    "statusCode": 400,
+                                "headers": CORS_HEADERS,
+                                "body": json.dumps({
+                        "message": "Users cannot block themselves."
                     })
                 }
                 

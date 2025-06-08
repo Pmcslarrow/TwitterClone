@@ -1,3 +1,5 @@
+## follow_user.py
+
 from configparser import ConfigParser
 import os
 import datatier
@@ -18,7 +20,7 @@ def lambda_handler(event, context):
     --------------
     Receives:
         - The follower userid (who is following)
-        - The followee userid (who is being followed)
+        - The followee username (who is being followed)
     
     On Success:
         - Adds a follower relationship to the Followers table
@@ -45,27 +47,17 @@ def lambda_handler(event, context):
                 })
             }
         
-        if "followee" not in event_body:
+        if "followee_username" not in event_body:
             return {
                 "statusCode": 400,
                             "headers": CORS_HEADERS,
                                 "body": json.dumps({
-                    "message": "followee userid missing."
+                    "message": "followee_username missing."
                 })
             }
         
         follower = event_body['follower']
-        followee = event_body['followee']
-
-        # Check if users are trying to follow themselves
-        if follower == followee:
-            return {
-                "statusCode": 400,
-                            "headers": CORS_HEADERS,
-                                "body": json.dumps({
-                    "message": "Users cannot follow themselves."
-                })
-            }
+        followee_username = event_body['followee_username']
 
         # Establishing DB connection
         print("*** Establishing DB connection ***")
@@ -81,7 +73,6 @@ def lambda_handler(event, context):
 
         db_conn = datatier.get_dbConn(rds_endpoint, rds_portnum, rds_username, rds_pwd, rds_dbname)
 
-        # Check if users exist before creating the follower relationship
         try:
             # Check if follower exists
             check_follower_sql = "SELECT userid FROM UserInfo WHERE userid = %s;"
@@ -96,9 +87,9 @@ def lambda_handler(event, context):
                     })
                 }
                 
-            # Check if followee exists
-            check_followee_sql = "SELECT userid FROM UserInfo WHERE userid = %s;"
-            followee_result = datatier.retrieve_all_rows(db_conn, check_followee_sql, [followee])
+            # Get followee userid from username
+            check_followee_sql = "SELECT userid FROM UserInfo WHERE username = %s;"
+            followee_result = datatier.retrieve_all_rows(db_conn, check_followee_sql, [followee_username])
             
             if not followee_result:
                 return {
@@ -106,6 +97,18 @@ def lambda_handler(event, context):
                     "headers": CORS_HEADERS,
                                 "body": json.dumps({
                         "message": "Followee user does not exist."
+                    })
+                }
+            
+            followee = followee_result[0][0]  # Extract userid from result
+            
+            # Check if users are trying to follow themselves
+            if follower == followee:
+                return {
+                    "statusCode": 400,
+                                "headers": CORS_HEADERS,
+                                "body": json.dumps({
+                        "message": "Users cannot follow themselves."
                     })
                 }
                 
