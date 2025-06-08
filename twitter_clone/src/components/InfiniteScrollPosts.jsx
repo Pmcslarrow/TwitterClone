@@ -22,9 +22,6 @@ const getRecentTweets = async ({ userid, postid, profileUsername }) => {
     return [];
   }
 
-  console.log("HERE")
-  console.log(profileUsername)
-
   const baseurl = import.meta.env.VITE_API_BASE_URL;
   const endpoint = 'tweets/recent';
   const url = baseurl + endpoint;
@@ -130,7 +127,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
       fetchData();
       setReload(false);
     }
-  }, [reload, rootPost]);
+  }, [reload, rootPost, profileUsername]);
 
   useEffect(() => {
     const container = containerRef.current;
