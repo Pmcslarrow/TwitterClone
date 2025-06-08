@@ -277,7 +277,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
     );
   }
 
-  console.log(visiblePosts)
+  // console.log(visiblePosts)
   return (
     <Box
       ref={containerRef}
