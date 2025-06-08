@@ -103,7 +103,6 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
         profileUsername: rootPost ? undefined : profileUsername // either is a username or undefined
       });
 
-      console.log(tweets)
       setAllPosts(tweets);
       setVisiblePosts(tweets ? tweets.slice(0, CHUNK_SIZE) : null);
       

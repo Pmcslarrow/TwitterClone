@@ -87,7 +87,7 @@ export default function Profile() {
                 { rootPost ? 
                     <>
                         <RootPost post={rootPost} setRootPost={setRootPost} />
-                        <Prompt rootPost={rootPost}/>
+                        <Prompt rootPost={rootPost} reload={reload} setReload={setReload}/>
 
                     </>
                 :
