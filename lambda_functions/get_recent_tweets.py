@@ -75,8 +75,29 @@ def lambda_handler(event, context):
        try:
            print("userid:", userid)
            print("postid:", postid)
+           print("username:", profileUsername)
 
-           if postid is not None:
+           if profileUsername is not None:
+               # Fetch root posts from a specific user by username - NEW
+               print(f"Fetching root posts from user: {profileUsername}")
+               sql_statement = """
+                   SELECT
+                       p.postid,
+                       p.userid,
+                       p.dateposted,
+                       p.textcontent,
+                       p.image_file_key,
+                       p.reply_to_postid,
+                       u.username
+                   FROM PostInfo p
+                   JOIN UserInfo u ON p.userid = u.userid
+                   LEFT JOIN Blocked b ON p.userid = b.blockee AND b.blocker = %s
+                   WHERE u.username = %s AND p.reply_to_postid IS NULL AND b.blockee IS NULL
+                   ORDER BY p.dateposted DESC
+               """
+               rows = datatier.retrieve_all_rows(db_conn, sql_statement, [userid, profileUsername])
+               serialized_rows = serialize_rows(rows, include_likes_retweets=False)
+           elif postid is not None:
                # Fetch replies to a specific post
                print(f"Checking to see if {userid} liked post {postid}")
                sql_statement = """
