@@ -114,7 +114,6 @@ def lambda_handler(event, context):
                    LEFT JOIN Blocked b ON p.userid = b.blockee AND b.blocker = %s
                    WHERE u.username = %s AND p.reply_to_postid IS NULL AND b.blockee IS NULL
                    ORDER BY p.dateposted DESC
-                   LIMIT 500;
                """
                rows = datatier.retrieve_all_rows(db_conn, sql_statement, [userid, userid, userid, username])
            else:
@@ -138,7 +137,6 @@ def lambda_handler(event, context):
                    LEFT JOIN Blocked b ON p.userid = b.blockee AND b.blocker = %s
                    WHERE (f.follower = %s OR p.userid = %s) AND p.reply_to_postid IS NULL AND b.blockee IS NULL
                    ORDER BY p.dateposted DESC
-                   LIMIT 500;
                """
                rows = datatier.retrieve_all_rows(db_conn, sql_statement, [userid, userid, userid, userid, userid])
 
