@@ -100,7 +100,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
       const tweets = await getRecentTweets({ 
         userid: user?.email, 
         postid: rootPost ? rootPost.postid : undefined,
-        profileUsername: profileUsername // either is a username or undefined
+        profileUsername: rootPost ? undefined : profileUsername // either is a username or undefined
       });
 
       console.log(tweets)
