@@ -322,9 +322,6 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'black' }}>
                 {post.username}
               </Typography>
-              <Typography sx={{ fontWeight: 'bold', color: 'black' }}>
-                {post.postid}
-              </Typography>
             </Box>
 
             <Typography variant="body1" sx={{ color: 'black', mb: 1 }}>
