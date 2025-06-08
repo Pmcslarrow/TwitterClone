@@ -86,7 +86,7 @@ def lambda_handler(event, context):
                        p.userid,
                        p.dateposted,
                        p.textcontent,
-                       p.image_file_key,
+                       u.picture,
                        p.reply_to_postid,
                        u.username
                    FROM PostInfo p
@@ -106,7 +106,7 @@ def lambda_handler(event, context):
                        p.userid,
                        p.dateposted,
                        p.textcontent,
-                       p.image_file_key,
+                       u.picture,
                        p.reply_to_postid,
                        CASE WHEN l.liker IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
                        CASE WHEN r.retweetuserid IS NOT NULL THEN 1 ELSE 0 END AS is_retweeted,
@@ -129,7 +129,7 @@ def lambda_handler(event, context):
                        p.userid,
                        p.dateposted,
                        p.textcontent,
-                       p.image_file_key,
+                       u.picture,
                        p.reply_to_postid,
                        CASE WHEN l.liker IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
                        CASE WHEN r.retweetuserid IS NOT NULL THEN 1 ELSE 0 END AS is_retweeted,

@@ -17,21 +17,21 @@ const Prompt = ({ rootPost, setRootPost, reload, setReload }) => {
           const baseurl = import.meta.env.VITE_API_BASE_URL;
           const endpoint = 'tweets/create';
           const url = baseurl + endpoint;
-          console.log(prompt)
+          // console.log(prompt)
           const response = await axios.post(url, { userid: user.email, root_post_id: rootPost.postid, textcontent: prompt }, {
             headers: { 'Content-Type': 'application/json' }
           });
-          console.log(response);
+          // console.log(response);
         } else {
           // POST
           const baseurl = import.meta.env.VITE_API_BASE_URL;
           const endpoint = 'tweets/create';
           const url = baseurl + endpoint;
-          console.log(prompt)
+          // console.log(prompt)
           const response = await axios.post(url, { userid: user.email, textcontent: prompt }, {
             headers: { 'Content-Type': 'application/json' }
           });
-          console.log(response);
+          // console.log(response);
         }
         setPrompt('');
 

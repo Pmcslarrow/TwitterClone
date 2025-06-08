@@ -43,7 +43,7 @@ export default function RightDrawer({ props }) {
     const fetchUsers = async () => {
       if (rightOpen) {
         setIsLoading(true);
-        const fetchedUsers = await getUsers(user.email); // Replace with actual current user ID
+        const fetchedUsers = await getUsers(user?.email); // Replace with actual current user ID
         setUsers(fetchedUsers);
         setIsLoading(false);
       }
