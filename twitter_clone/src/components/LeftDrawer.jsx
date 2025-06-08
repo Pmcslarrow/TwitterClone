@@ -29,7 +29,7 @@ export default function LeftDrawer({props}) {
 
       {/* Avatar button */}
          <Avatar
-            src={"https://example.com/profile.jpg"}
+            src={user?.picture}
             alt={user?.username}
             sx={{
                 width: 50,

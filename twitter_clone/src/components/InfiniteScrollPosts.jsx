@@ -54,11 +54,13 @@ const getRecentTweets = async ({ userid, postid, profileUsername }) => {
       const commentEntry = comment_counts.find(entry => entry.reply_to_postid === postId);
       const commentCount = commentEntry ? commentEntry.comment_count : 0;
 
+
+
       return {
         postid: postId,
         poster: tweet.userid,
         text: tweet.content || tweet.text,
-        image: tweet.image_url || null,
+        image: tweet.image || null,
         likes: likeCount,
         retweets: retweetCount,
         replies: commentCount,
@@ -275,6 +277,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
     );
   }
 
+  console.log(visiblePosts)
   return (
     <Box
       ref={containerRef}
@@ -313,7 +316,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Avatar onClick={() => navigate(`/profile/:${post.username}`)} sx={{ width: 32, height: 32, mr: 1, '&:hover': {bgcolor: '#4CAF50', cursor: 'pointer'}}}>
+              <Avatar src={post?.image} onClick={() => navigate(`/profile/${post.username}`)} sx={{ width: 32, height: 32, mr: 1, '&:hover': {bgcolor: '#4CAF50', cursor: 'pointer'}}}>
                 {post.poster[0].toUpperCase()}
               </Avatar>
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'black' }}>
@@ -327,7 +330,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
             <Typography variant="body1" sx={{ color: 'black', mb: 1 }}>
               {post.text}
             </Typography>
-
+{/* 
             {post.image && (
               <Box
                 component="img"
@@ -340,7 +343,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
                   mb: 1,
                 }}
               />
-            )}
+            )} */}
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'space-between' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
