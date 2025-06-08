@@ -8,11 +8,15 @@ import { useParams } from 'react-router-dom';
 
 export default function ProfileHeader({ bio, picture }) {
     const navigate = useNavigate();
-    const [editing, setEditing] = useState(false);
     const { user } = useUser(); // The user who is logged in
     const { profileUsername } = useParams(); // Profile who's page we are visiting
-
+    const [editing, setEditing] = useState(false)
     const canEdit = (user?.username === profileUsername )
+
+    useEffect(() => {
+        console.log("USER CHANGED")
+        console.log(user)
+    }, [user])
 
     if (editing) {
         return <EditProfile setEditing={setEditing}/>
@@ -40,7 +44,7 @@ export default function ProfileHeader({ bio, picture }) {
                 onClick={() => navigate("/home")}
             />
             <Typography variant="h6" sx={{ color: 'black', fontWeight: 'bold' }}>
-                {profileUsername}
+                {canEdit ? user?.username : profileUsername}
             </Typography>
         
         {/* Edit button logic */}
