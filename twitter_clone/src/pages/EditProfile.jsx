@@ -11,9 +11,12 @@ import {
   IconButton
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import axios from 'axios'
+import { useNavigate } from 'react-router-dom';
 
 export default function EditProfile({ setEditing }) {
-  const { user, updateUser } = useUser(); // assume updateUser is provided
+  const { user, setUser } = useUser(); // assume updateUser is provided
+  const navigate = useNavigate()
   const [username, setUsername] = useState(user?.username || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [picture, setPicture] = useState(user?.picture || '');
@@ -25,12 +28,45 @@ export default function EditProfile({ setEditing }) {
     setError(null);
 
     try {
-      // Example: Replace this with your real API call
-      await updateUser({ username, bio, picture });
+      const baseurl = import.meta.env.VITE_API_BASE_URL;
+      const endpoint = 'users/update-profile';
+      const url = baseurl + endpoint;
+
+      // console.log(user.email, bio, username, picture)
+
+      const response = await axios.post(
+        url,
+        {
+          userid: user?.email,
+          bio: bio,
+          username: username,
+          picture: picture
+        },
+        {
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+
+      //
+      // On Success I want to update the state of the user so that it reflects
+      // the changes everywhere without having to hit the DB
+      //
+      if (String(response.status) === "200") {
+          const updatedUser = {
+            ...user,
+            username: username,
+            bio: bio,
+            picture: picture, 
+          };
+          setUser(updatedUser);
+          navigate(`/profile/${username}`)
+      }
+    
     } catch (err) {
       setError('Failed to update profile.');
     } finally {
       setSaving(false);
+      setEditing(false);
     }
   };
 
@@ -65,7 +101,7 @@ export default function EditProfile({ setEditing }) {
             variant="outlined"
             fullWidth
             value={username}
-            onChange={(e) => setUserid(e.target.value)}
+            onChange={(e) => setUsername(e.target.value)}
           />
 
           <TextField

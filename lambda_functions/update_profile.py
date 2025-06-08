@@ -63,29 +63,23 @@ def lambda_handler(event, context):
         #
         # Extracting user changes
         #
-        #
-        # updates = { bio: new_bio, username: new_username, picture: new_picture } 
-        # Allows us to iterate through things to actually update. 
-        #
-
         print("*** Extracting user input ***")
 
         updates = {} 
 
-        if "bio" in event:
+        if "bio" in event and event['bio'] != "":
             updates['bio'] = event['bio']
 
-        if "username" in event:
+        if "username" in event and event['username'] != "":
             updates['username'] = event['username']
 
-        if "picture" in event:
+        if "picture" in event and event['picture'] != "":
             updates['picture'] = event["picture"]
 
 
         #
         # Making changes 
         #
-
         try:
             sql_set_statements = ", ".join([f"{key} = %s" for key in updates.keys()])
 
