@@ -70,7 +70,7 @@ const getRecentTweets = async ({ userid, postid, profileUsername }) => {
       // [ {} ]
     });
 
-    console.log(enrichedTweets)
+    // console.log(enrichedTweets)
 
     return enrichedTweets;
   } catch (error) {
@@ -159,7 +159,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
     const currentState = postStates[post.postid];
     const isLiked = currentState?.liked ?? post.liked;
 
-    console.log("I AM LIKING OR UNLIKING POST: ", post.postid)
+    // console.log("I AM LIKING OR UNLIKING POST: ", post.postid)
     
     // Optimistically update UI
     setPostStates(prev => ({
@@ -183,7 +183,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
         headers: { 'Content-Type': 'application/json' }
       });
 
-      console.log(response);
+      // console.log(response);
     } catch (error) {
       // Revert on error
       setPostStates(prev => ({
@@ -224,7 +224,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
         headers: { 'Content-Type': 'application/json' }
       });
 
-      console.log(response);
+      // console.log(response);
     } catch (error) {
       // Revert on error
       setPostStates(prev => ({
