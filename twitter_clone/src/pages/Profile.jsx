@@ -16,6 +16,8 @@ export default function Profile() {
     const [rightOpen, setRightOpen] = useState(false);
     const [rootPost, setRootPost] = useState(null);
     const [reload, setReload] = useState(false);
+    const [isUserFollowed, setIsUserFollowed] = useState(false)
+    const [isUserBlocked, setIsUserBlocked] = useState(false)
     const { profileUsername } = useParams(); // Profile who's page we are visiting
     
     return (
@@ -90,11 +92,17 @@ export default function Profile() {
                     </>
                 :
                     <>
-                        <ProfileHeader reload={reload} setReload={setReload} />
+                        <ProfileHeader 
+                            isUserFollowed={isUserFollowed}
+                            setIsUserFollowed={setIsUserFollowed}
+                            isUserBlocked={isUserBlocked}
+                            setIsUserBlocked={setIsUserBlocked}
+                        />
                     </>
                 }
 
             {/* If comment is selected, rootPost has a value. This means it will only show the rootPost and comments for this post */}
+            {!isUserBlocked && (
                 <InfiniteScrollPosts 
                     rootPost={rootPost} 
                     setRootPost={setRootPost} 
@@ -102,6 +110,7 @@ export default function Profile() {
                     setReload={setReload} 
                     profileUsername={profileUsername}
                 />
+            )}
 
             </Box>
 
