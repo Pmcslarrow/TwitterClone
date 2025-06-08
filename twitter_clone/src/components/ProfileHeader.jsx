@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom';
 import EditProfile from '../pages/EditProfile';
 import axios from 'axios';
 
-export default function ProfileHeader() {
+export default function ProfileHeader({ reload, setReload }) {
     const navigate = useNavigate();
     const { user } = useUser(); // The user who is logged in
     const { profileUsername } = useParams(); // Profile who's page we are visiting
@@ -38,27 +38,22 @@ export default function ProfileHeader() {
                     console.log(response)
                     
                     if (response.data.length > 0) {
-                        const {bio, picture} = response.data[0];
+                        const [bio, picture] = response.data[0];
                         setBio(bio)
                         setPicture(picture)
                     } else {
                         throw Error("nexist")
                     }
 
-
                 } catch (error) {
-                    if (error.message === "nexist") {
-                        setBio("USER DOES NOT EXIST");
-                    } else {
-                        setBio("");
-                    }
+                    setBio("");
                     setPicture(null);
                 }
             }
         }
         
         fetchUser()
-    }, [])
+    }, [profileUsername])
 
     if (editing) {
         return <EditProfile setEditing={setEditing}/>

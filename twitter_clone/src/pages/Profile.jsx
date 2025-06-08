@@ -16,6 +16,7 @@ export default function Profile() {
     const [rightOpen, setRightOpen] = useState(false);
     const [rootPost, setRootPost] = useState(null);
     const [reload, setReload] = useState(false);
+    const { profileUsername } = useParams(); // Profile who's page we are visiting
     
     return (
         <Box
@@ -89,12 +90,18 @@ export default function Profile() {
                     </>
                 :
                     <>
-                        <ProfileHeader />
+                        <ProfileHeader reload={reload} setReload={setReload} />
                     </>
                 }
 
             {/* If comment is selected, rootPost has a value. This means it will only show the rootPost and comments for this post */}
-                <InfiniteScrollPosts rootPost={rootPost} setRootPost={setRootPost} reload={reload} setReload={setReload}/>
+                <InfiniteScrollPosts 
+                    rootPost={rootPost} 
+                    setRootPost={setRootPost} 
+                    reload={reload} 
+                    setReload={setReload} 
+                    profileUsername={profileUsername}
+                />
 
             </Box>
 

@@ -17,10 +17,13 @@ import CircularProgress from '@mui/material/CircularProgress';
 import axios from 'axios';
 import { useUser } from '../context/UserContext';
 
-const getRecentTweets = async ({ userid, postid }) => {
+const getRecentTweets = async ({ userid, postid, profileUsername }) => {
   if (!userid) {
     return [];
   }
+
+  console.log("HERE")
+  console.log(profileUsername)
 
   const baseurl = import.meta.env.VITE_API_BASE_URL;
   const endpoint = 'tweets/recent';
@@ -29,7 +32,7 @@ const getRecentTweets = async ({ userid, postid }) => {
   try {
     const response = await axios.post(
       url,
-      { userid: userid, postid },
+      { userid: userid, postid: postid, profileUsername: profileUsername },
       { headers: { 'Content-Type': 'application/json' } }
     );
     const tweets = response.data;
@@ -79,14 +82,14 @@ const getRecentTweets = async ({ userid, postid }) => {
   }
 };
 
-function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
+function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profileUsername }) {
   const { user, updateUser } = useUser();
-  const containerRef = useRef(null);
-  const CHUNK_SIZE = 10;
-  const [originalPosts, setOriginalPosts] = useState([]);
   const [allPosts, setAllPosts] = useState([]);
+  const [originalPosts, setOriginalPosts] = useState([]);
   const [visiblePosts, setVisiblePosts] = useState([]);
   const [isFetching, setIsFetching] = useState(false);
+  const containerRef = useRef(null);
+  const CHUNK_SIZE = 10;
     
   // Add state for tracking post interactions
   const [postStates, setPostStates] = useState({});
@@ -97,8 +100,13 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
     const fetchData = async () => {
       setIsFetching(true);
 
-      const tweets = await getRecentTweets({ userid: user?.email, postid: rootPost ? rootPost.postid : undefined });
+      const tweets = await getRecentTweets({ 
+        userid: user?.email, 
+        postid: rootPost ? rootPost.postid : undefined,
+        profileUsername: profileUsername // either is a username or undefined
+      });
 
+      console.log(tweets)
       setAllPosts(tweets);
       setVisiblePosts(tweets ? tweets.slice(0, CHUNK_SIZE) : null);
       
@@ -249,7 +257,11 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload }) {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      const updatedTweets = await getRecentTweets({ userid: user.email, postid: undefined });
+      const updatedTweets = await getRecentTweets({ 
+        userid: user?.email, 
+        postid: undefined,
+        profileUsername: profileUsername
+      });
       setReload(true);
       setIsFetching(true);
       setOriginalPosts(updatedTweets);
