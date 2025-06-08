@@ -47,7 +47,7 @@ export default function EditProfile({ setEditing }) {
         }
       ); 
 
-      console.log(response)
+      // console.log(response)
 
       //
       // On Success I want to update the state of the user so that it reflects
@@ -60,7 +60,7 @@ export default function EditProfile({ setEditing }) {
             bio: bio,
             picture: picture, 
           };
-          console.log(updatedUser)
+          // console.log(updatedUser)
           setUser(updatedUser);
           navigate(`/profile/${username}`)
       }
