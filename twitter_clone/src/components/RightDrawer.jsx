@@ -20,8 +20,7 @@ const getUsers = async (currentUserId) => {
     const users = response.data.map(user => ({
       userid: user[0], // First element from tuple
       username: user[1], // Second element from tuple
-      bio: '', // Not provided by API
-      picture: `https://i.pravatar.cc/150?u=${user[0]}` // Generate avatar based on userid
+      picture: user[2] 
     }));
     
     return users;
@@ -96,7 +95,6 @@ export default function RightDrawer({ props }) {
                 <Avatar src={user.picture} alt={user.username} sx={{ mr: 2 }} />
                 <ListItemText
                   primary={user.username}
-                  secondary={user.bio || 'No bio available'}
                 />
               </ListItem>
             ))}

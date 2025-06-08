@@ -52,7 +52,7 @@ def lambda_handler(event, context):
         db_conn = datatier.get_dbConn(rds_endpoint, rds_portnum, rds_username, rds_pwd, rds_dbname)
 
         try:
-            sql = "SELECT userid, username FROM UserInfo WHERE userid != %s;"
+            sql = "SELECT userid, username, picture FROM UserInfo WHERE userid != %s;"
             rows = datatier.retrieve_all_rows(db_conn, sql, [userid])
             return {
                 "statusCode": 200,
