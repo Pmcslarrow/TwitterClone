@@ -71,6 +71,8 @@ export default function ProfileHeader({ isUserFollowed, setIsUserFollowed, isUse
             setRefresh(prev => !prev); // Trigger refetch
         } catch (error) {
             console.error(`Error during ${action}:`, error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -89,6 +91,8 @@ export default function ProfileHeader({ isUserFollowed, setIsUserFollowed, isUse
             setRefresh(prev => !prev); // Trigger refetch
         } catch (error) {
             console.error(`Error during ${action}:`, error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
