@@ -109,8 +109,6 @@ def lambda_handler(event, context):
                        u.username
                    FROM PostInfo p
                    JOIN UserInfo u ON p.userid = u.userid
-                   LEFT JOIN Likes l ON p.postid = l.originalpost AND l.liker = %s
-                   LEFT JOIN Retweets r ON p.postid = r.originalpost AND r.retweetuserid = %s
                    LEFT JOIN Blocked b ON p.userid = b.blockee AND b.blocker = %s
                    WHERE u.username = %s AND p.reply_to_postid IS NULL AND b.blockee IS NULL
                    ORDER BY p.dateposted DESC
