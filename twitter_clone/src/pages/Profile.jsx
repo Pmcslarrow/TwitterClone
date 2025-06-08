@@ -16,7 +16,6 @@ export default function Profile() {
     const [rightOpen, setRightOpen] = useState(false);
     const [rootPost, setRootPost] = useState(null);
     const [reload, setReload] = useState(false);
-    const { profileUsername } = useParams(); // Profile who's page we are visiting
     
     return (
         <Box
@@ -90,11 +89,7 @@ export default function Profile() {
                     </>
                 :
                     <>
-                        <ProfileHeader 
-                            profileUsername={profileUsername} 
-                            bio="Web3 enthusiast. Tweets about code, coffee, and cats." 
-                            picture="https://example.com/profile.jpg" 
-                        />
+                        <ProfileHeader />
                     </>
                 }
 

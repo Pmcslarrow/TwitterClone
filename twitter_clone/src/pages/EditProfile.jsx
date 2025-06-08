@@ -32,7 +32,7 @@ export default function EditProfile({ setEditing }) {
       const endpoint = 'users/update-profile';
       const url = baseurl + endpoint;
 
-      console.log(user.email, bio, username, picture)
+      // console.log(user.email, bio, username, picture)
 
       const response = await axios.post(
         url,
