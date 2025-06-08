@@ -51,7 +51,7 @@ def lambda_handler(event, context):
 
        userid = event_body['userid']
        postid = event_body.get('postid', None)  # Optional
-       username = event_body.get('username', None)  # Optional - NEW
+       profileUsername = event_body.get('profileUsername', None)  # Optional - NEW
 
        # Establish DB connection
        secret_manager = boto3.client('secretsmanager')
@@ -68,7 +68,7 @@ def lambda_handler(event, context):
        try:
            print("userid:", userid)
            print("postid:", postid)
-           print("username:", username)
+           print("username:", profileUsername)
 
            if postid is not None:
                # Fetch replies to a specific post
@@ -93,9 +93,9 @@ def lambda_handler(event, context):
                    ORDER BY p.dateposted DESC;
                """
                rows = datatier.retrieve_all_rows(db_conn, sql_statement, [userid, userid, userid, postid])
-           elif username is not None:
+           elif profileUsername is not None:
                # Fetch root posts from a specific user by username - NEW
-               print(f"Fetching root posts from user: {username}")
+               print(f"Fetching root posts from user: {profileUsername}")
                sql_statement = """
                    SELECT
                        p.postid,
@@ -109,13 +109,11 @@ def lambda_handler(event, context):
                        u.username
                    FROM PostInfo p
                    JOIN UserInfo u ON p.userid = u.userid
-                   LEFT JOIN Likes l ON p.postid = l.originalpost AND l.liker = %s
-                   LEFT JOIN Retweets r ON p.postid = r.originalpost AND r.retweetuserid = %s
                    LEFT JOIN Blocked b ON p.userid = b.blockee AND b.blocker = %s
                    WHERE u.username = %s AND p.reply_to_postid IS NULL AND b.blockee IS NULL
                    ORDER BY p.dateposted DESC
                """
-               rows = datatier.retrieve_all_rows(db_conn, sql_statement, [userid, userid, userid, username])
+               rows = datatier.retrieve_all_rows(db_conn, sql_statement, [userid, profileUsername])
            else:
                # Fetch general recent tweets (original logic)
                sql_statement = """
