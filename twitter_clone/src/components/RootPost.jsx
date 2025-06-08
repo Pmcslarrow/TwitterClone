@@ -128,7 +128,7 @@ const RootPost = ({ post, setRootPost }) => {
       )}
 
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-        <Avatar sx={{ width: 32, height: 32, mr: 1 }}>
+        <Avatar src={post?.image} sx={{ width: 32, height: 32, mr: 1 }}>
           {post.poster[0].toUpperCase()}
         </Avatar>
         <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'black' }}>
@@ -139,7 +139,7 @@ const RootPost = ({ post, setRootPost }) => {
       <Typography variant="body1" sx={{ color: 'black', mb: 1 }}>
         {post.text}
       </Typography>
-
+{/* 
       {post.image && (
         <Box
           component="img"
@@ -152,7 +152,7 @@ const RootPost = ({ post, setRootPost }) => {
             mb: 1,
           }}
         />
-      )}
+      )} */}
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
