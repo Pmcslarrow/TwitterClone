@@ -307,6 +307,7 @@ function InfiniteScrollPosts({ rootPost, setRootPost, reload, setReload, profile
         return (
           <Box
             key={post.postid}
+            data-testid="post-item"
             sx={{
               bgcolor: 'white',
               p: 2,

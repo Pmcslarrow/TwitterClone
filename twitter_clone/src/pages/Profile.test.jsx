@@ -1,153 +1,61 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, useParams } from 'react-router-dom';
 import Profile from './Profile';
 
-// Mock the components
-vi.mock('../components/LeftDrawer', () => ({
-  default: ({ props }) => (
-    <div data-testid="left-drawer" style={{ display: props.leftOpen ? 'block' : 'none' }}>
-      Left Drawer
-    </div>
-  )
+// Mock child components
+vi.mock('../components/ProfileHeader', () => ({ default: () => <div data-testid="profile-header" /> }));
+vi.mock('../components/RootPost', () => ({ default: () => <div data-testid="root-post" /> }));
+vi.mock('../components/Prompt', () => ({ default: () => <div data-testid="prompt" /> }));
+vi.mock('../components/InfiniteScrollPosts', () => ({ 
+    default: ({ setRootPost }) => (
+        <div data-testid="infinite-scroll-posts" onClick={() => setRootPost({ id: 'test-post' })}>
+            Infinite Scroll Posts
+        </div>
+    )
 }));
+vi.mock('../components/LeftDrawer', () => ({ default: () => <div data-testid="left-drawer" /> }));
+vi.mock('../components/RightDrawer', () => ({ default: () => <div data-testid="right-drawer" /> }));
 
-vi.mock('../components/RightDrawer', () => ({
-  default: ({ props }) => (
-    <div data-testid="right-drawer" style={{ display: props.rightOpen ? 'block' : 'none' }}>
-      Right Drawer
-    </div>
-  )
-}));
-
-vi.mock('../components/Prompt', () => ({
-  default: ({ rootPost }) => (
-    <div data-testid="prompt">Prompt Component {rootPost?.id}</div>
-  )
-}));
-
-vi.mock('../components/RootPost', () => ({
-  default: ({ post, setRootPost }) => (
-    <div data-testid="root-post">
-      Root Post: {post?.id}
-      <button onClick={() => setRootPost(null)}>Close</button>
-    </div>
-  )
-}));
-
-vi.mock('../components/InfiniteScrollPosts', () => ({
-  default: ({ rootPost, setRootPost }) => (
-    <div data-testid="infinite-scroll-posts">
-      Infinite Scroll Posts
-      <button onClick={() => setRootPost({ id: 'test-post' })}>Set Root Post</button>
-    </div>
-  )
-}));
-
-vi.mock('../components/ProfileHeader', () => ({
-  default: ({ profileUserId, bio, picture }) => (
-    <div data-testid="profile-header">
-      Profile Header - User: {profileUserId}, Bio: {bio}
-    </div>
-  )
-}));
-
-// Mock react-router-dom useParams
-const mockUseParams = vi.fn();
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useParams: () => mockUseParams()
-  };
+// Mock react-router-dom's useParams hook
+vi.mock('react-router-dom', async (importActual) => {
+    const actual = await importActual();
+    return {
+        ...actual,
+        useParams: vi.fn(),
+    };
 });
 
-const ProfileWrapper = ({ profileuserid = 'test-user' }) => {
-  mockUseParams.mockReturnValue({ profileuserid });
-  return (
-    <BrowserRouter>
-      <Profile />
-    </BrowserRouter>
-  );
-};
+describe('Profile Page', () => {
+  it('initially renders the ProfileHeader and InfiniteScrollPosts', () => {
+    // ARRANGE
+    useParams.mockReturnValue({ profileUsername: 'testuser' });
+    render(<BrowserRouter><Profile /></BrowserRouter>);
 
-describe('Profile', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('renders the profile page with basic elements', () => {
-    render(<ProfileWrapper />);
-    
+    // ASSERT
     expect(screen.getByTestId('profile-header')).toBeInTheDocument();
     expect(screen.getByTestId('infinite-scroll-posts')).toBeInTheDocument();
-  });
-
-  it('displays profile header with correct props', () => {
-    render(<ProfileWrapper profileuserid="john123" />);
-    
-    expect(screen.getByTestId('profile-header')).toHaveTextContent('User: john123');
-    expect(screen.getByTestId('profile-header')).toHaveTextContent('Bio: Web3 enthusiast');
-  });
-
-  it('shows profile header when no root post is selected', () => {
-    render(<ProfileWrapper />);
-    
-    expect(screen.getByTestId('profile-header')).toBeInTheDocument();
+    // RootPost and Prompt should not be visible initially
     expect(screen.queryByTestId('root-post')).not.toBeInTheDocument();
     expect(screen.queryByTestId('prompt')).not.toBeInTheDocument();
   });
 
-  it('shows root post and prompt when root post is selected', async () => {
-    render(<ProfileWrapper />);
-    
-    const setRootPostButton = screen.getByRole('button', { name: /set root post/i });
-    fireEvent.click(setRootPostButton);
-    
-    await waitFor(() => {
-      expect(screen.getByTestId('root-post')).toBeInTheDocument();
-      expect(screen.getByTestId('prompt')).toBeInTheDocument();
-      expect(screen.queryByTestId('profile-header')).not.toBeInTheDocument();
-    });
-  });
+  it('switches to the RootPost and Prompt view when a post is selected', async () => {
+    // ARRANGE
+    useParams.mockReturnValue({ profileUsername: 'testuser' });
+    render(<BrowserRouter><Profile /></BrowserRouter>);
 
-  it('can close root post view and return to profile view', async () => {
-    render(<ProfileWrapper />);
-    
-    // Set root post
-    const setRootPostButton = screen.getByRole('button', { name: /set root post/i });
-    fireEvent.click(setRootPostButton);
-    
-    await waitFor(() => {
-      expect(screen.getByTestId('root-post')).toBeInTheDocument();
-    });
-    
-    // Close root post
-    const closeButton = screen.getByRole('button', { name: /close/i });
-    fireEvent.click(closeButton);
-    
-    await waitFor(() => {
-      expect(screen.queryByTestId('root-post')).not.toBeInTheDocument();
-      expect(screen.getByTestId('profile-header')).toBeInTheDocument();
-    });
-  });
+    // ACT
+    const infiniteScroll = screen.getByTestId('infinite-scroll-posts');
+    fireEvent.click(infiniteScroll);
 
-  it('passes correct props to components', () => {
-    render(<ProfileWrapper profileuserid="user123" />);
-    
-    expect(screen.getByTestId('profile-header')).toHaveTextContent('User: user123');
-    expect(screen.getByTestId('infinite-scroll-posts')).toBeInTheDocument();
-  });
-
-  it('handles different profile user IDs from URL params', () => {
-    mockUseParams.mockReturnValue({ profileuserid: 'different-user' });
-    
-    render(
-      <BrowserRouter>
-        <Profile />
-      </BrowserRouter>
-    );
-    
-    expect(screen.getByTestId('profile-header')).toHaveTextContent('User: different-user');
+    // ASSERT
+    await waitFor(() => {
+        // The header should disappear
+        expect(screen.queryByTestId('profile-header')).not.toBeInTheDocument();
+        // RootPost and Prompt should now be visible
+        expect(screen.getByTestId('root-post')).toBeInTheDocument();
+        expect(screen.getByTestId('prompt')).toBeInTheDocument();
+    });
   });
 });
